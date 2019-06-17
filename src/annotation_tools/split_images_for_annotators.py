@@ -53,11 +53,22 @@ def split_images(input_dir, output_dir, num_raters, overlap, rater_names=None):
             print("Failed to make directory %s", name)
 
             exit(1)
+    
+    # Make a directory for the overlap images
+    try:
+        os.mkdir(os.path.join(output_dir, "overlap_images"))
+    except:
+        print("Failed to make overlap dir")
+
+        exit(1)
 
     for img in overlap_images:
         for name in rater_names:
             shutil.copyfile(os.path.join(input_dir,img), os.path.join(output_dir, name, img))
+        
+        shutil.copyfile(os.path.join(input_dir, img), os.path.join(output_dir, "overlap_images", img))   
     
+    # Randomize the remaining images
     remaining_images.shuffle()
     
     cur_rater = 0
