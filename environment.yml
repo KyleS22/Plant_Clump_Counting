@@ -1,0 +1,7 @@
+name: plant_counting
+channels:
+  - defaults
+dependencies:
+  - numpy
+  - tqdm
+
