@@ -26,6 +26,8 @@ conda env create -f environment.yml
 conda activate plant_counting
 ```
 
+Tada!  You are now in the environment that can be used to run all of the code here!
+
 # Contribution Guide
 
 To add functionality to the project, please create a new branch off of development for your new feature.  Completed features can be merged into development.  To merge with master, an approved review is required.
