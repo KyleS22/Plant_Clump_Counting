@@ -13,7 +13,8 @@ import argparse
 import os
 import numpy as np
 import shutil
-import tqdm
+from tqdm import tqdm
+import random
 
 def split_images(input_dir, output_dir, num_raters, overlap, rater_names=None):
     """
@@ -69,11 +70,11 @@ def split_images(input_dir, output_dir, num_raters, overlap, rater_names=None):
         shutil.copyfile(os.path.join(input_dir, img), os.path.join(output_dir, "overlap_images", img))   
     
     # Randomize the remaining images
-    remaining_images.shuffle()
+    random.shuffle(remaining_images)
     
     cur_rater = 0
 
-    pbar = tqdm(total = len(remaining_images))
+    pbar = tqdm(total=len(remaining_images))
     while len(remaining_images) is not 0:
 
         # Choose an image from the list, remove it, and copy it to the next rater
@@ -96,8 +97,8 @@ if __name__ == "__main__":
     
     parser.add_argument('input_dir', help="The path to the images to be split.")
     parser.add_argument('output_dir', help="The path to a directory to store the directories of split images.")
-    parser.add_argument('num_raters', help='The number of raters to divide the images between.')
-    parser.add_argument('overlap', help='The number of images to use for inter-rater agreement.')
+    parser.add_argument('num_raters', type=int, help='The number of raters to divide the images between.')
+    parser.add_argument('overlap', type=int, help='The number of images to use for inter-rater agreement.')
     parser.add_argument('-n', '--rater_names', action="append", help='A list of the names of the raters. Specify each\
         element of the list as -n <name> ')
 
