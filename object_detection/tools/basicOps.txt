@@ -1,0 +1,13 @@
+python xml_to_csv.py -in .\pascalvoc_labels_oneclass\test -out .\test.csv
+python xml_to_csv.py -in .\pascalvoc_labels_oneclass\train -out .\train.csv
+
+python generate_tfrecord.py --csv_input .\test.csv --img_input .\img_png --output_path .\test.record 
+python generate_tfrecord.py --csv_input .\train.csv --img_input .\img_png --output_path .\train.record 
+
+***
+
+python model_main.py --model_dir D:\tensorflow\projects\PlantClumpDetection\annotations\SSDlite\training1 --pipeline_config_path D:\tensorflow\projects\PlantClumpDetection\annotations\SSDlite\training1\ssdlite_mobilenet_v2_coco.config --num_train_steps 150000
+
+tensorboard --logdir D:\tensorflow\projects\PlantClumpDetection\annotations\SSDlite\training1
+
+python export_inference_graph.py --input_type image_tensor --pipeline_config_path D:\tensorflow\projects\PlantClumpDetection\annotations\SSDlite\training1\ssdlite_mobilenet_v2_coco.config --trained_checkpoint_prefix D:\tensorflow\projects\PlantClumpDetection\annotations\SSDlite\training1\model.ckpt-150000 --output_directory D:\tensorflow\projects\PlantClumpDetection\annotations\SSDlite\training1\exported_inference_graph-150000
