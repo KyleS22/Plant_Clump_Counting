@@ -1,12 +1,12 @@
 <annotation>
-    <folder>C:\Users\rdc872\D_Drive\Special.FOLDER\School\Masters\Classes\CMPT898\annotations\img_png</folder>
+    <folder>D:\tensorflow\projects\PlantClumpDetection\git\datasets\annotations\img_patches_8_png</folder>
     <filename>32_G0428506_1.png</filename>
-    <path>C:\Users\rdc872\D_Drive\Special.FOLDER\School\Masters\Classes\CMPT898\annotations\img_png\32_G0428506_1.png</path>
+    <path>D:\tensorflow\projects\PlantClumpDetection\git\datasets\annotations\img_patches_8_png\32_G0428506_1.png</path>
     <source>
         <database>annotations</database>
     </source>
     <size>
-        <width>4000</width>
+        <width>500</width>
         <height>500</height>
         <depth>3</depth>
     </size>
