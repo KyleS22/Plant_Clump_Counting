@@ -15,16 +15,23 @@ def main():
     parser = argparse.ArgumentParser('Randomly shuffles a folder of files into train and test datasets.')
     parser.add_argument('-i', '--input_folder', help='folder to input files', type=str, required=True)
     parser.add_argument('-s', '--random_seed', help='the seed for randomization', type=int, default=7742116)
-    parser.add_argument('--train_percent', help='the (float) percent of files to be used for training; 1-this will be used for testing (default=0.8)', type=float, default=0.8)
+    parser.add_argument('--train_percent', help='the (float) percent of files to be used for training; 1-validation%-this will be used for testing (default=0.8)', type=float, default=0.8)
+    parser.add_argument('--validate_percent', help='the (float) percent of files to be used for validation; 1-train%-this will be used for testing (default=0.0)', type=float, default=0.0)
     parser.add_argument('--file_extension', help='the file extension of the files to be shffled, inclduing the \'.\' (default=.xml)', type=str, default='.xml')
 
     args = parser.parse_args()
+    
+    if args.train_percent + args.validate_percent > 1.0:
+        raise ValueError("Sum of training percent and validation percent cannot exceed 1.")
     
     infolder = args.input_folder
     
     random.seed(args.random_seed)
 
-    newFolders = {"train": args.train_percent, "test": 1-args.train_percent} 
+    if args.validate_percent > 0.0:
+        newFolders = {"train": args.train_percent, "validate": args.validate_percent, "test": 1-args.train_percent-args.validate_percent} 
+    else:
+        newFolders = {"train": args.train_percent, "test": 1-args.train_percent} 
 
     for dir in newFolders.keys():
         output_folder = os.path.join(infolder, dir) # create local copy in case of modification
@@ -44,7 +51,7 @@ def main():
         if iteration < lenNewFolders:
             tempList = fileList[tempValAcc:tempVal+tempValAcc]
         else:
-            tempList = fileList[tempValAcc:]
+            tempList = fileList[tempValAcc:] # Last key, just use remainder of data
         moveFiles(tempList, os.path.join(infolder, dir))
         tempValAcc += tempVal
         iteration += 1
