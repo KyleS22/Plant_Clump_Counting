@@ -272,6 +272,11 @@ if args.xmlfilenames:
 else:
     xmlfolder = None
 
+### CREATE/ADJUST OUTPUT FOLDER IF NECESSARY ###
+if not os.path.exists(outfolder):
+    os.makedirs(outfolder)
+    print(f"WARNING: Creating output directory: {outfolder}")
+
 MAXWIDTH = args.max_width
 MAXVAL = 255
 

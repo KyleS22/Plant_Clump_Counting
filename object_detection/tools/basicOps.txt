@@ -1,4 +1,5 @@
-python demarcate.py -i .\pascalvoc_labels_patched_oneclass
+python demarcate.py -i ..\annotations\pascalvoc_labels_patched_oneclass
+python demarcate.py -i ..\annotations\pascalvoc_labels_patched_oneclass --train_percent 0.75 --validate_percent 0.15
 
 python xml_to_csv.py -in .\pascalvoc_labels_oneclass\test -out .\test.csv
 python xml_to_csv.py -in .\pascalvoc_labels_oneclass\train -out .\train.csv
@@ -12,6 +13,12 @@ python model_main.py --model_dir D:\tensorflow\projects\PlantClumpDetection\anno
 
 tensorboard --logdir D:\tensorflow\projects\PlantClumpDetection\annotations\SSDlite\training1
 
-python export_inference_graph.py --input_type image_tensor --pipeline_config_path D:\tensorflow\projects\PlantClumpDetection\annotations\SSDlite\training1\ssdlite_mobilenet_v2_coco.config --trained_checkpoint_prefix D:\tensorflow\projects\PlantClumpDetection\annotations\SSDlite\training1\model.ckpt-150000 --output_directory D:\tensorflow\projects\PlantClumpDetection\annotations\SSDlite\training1\exported_inference_graph-150000
+python export_inference_graph.py --input_type image_tensor --pipeline_config_path D:\tensorflow\projects\PlantClumpDetection\annotations\SSDlite\training1\ssdlite_mobilenet_v2_coco.config --trained_checkpoint_prefix D:\tensorflow\projects\PlantClumpDetection\annotations\SSDlite\training1\model.ckpt-150000 --output_directory D:\tensorflow\projects\PlantClumpDetection\annotations\SSDlite\training1\exported_inference_graph-150000 
+
+***
+
+python model_main.py --pipeline_config_path D:\tensorflow\projects\PlantClumpDetection\annotations\SSDlite\training5\exported_inference_graph-20000\pipeline_test.config --checkpoint_dir D:\tensorflow\projects\PlantClumpDetection\annotations\SSDlite\training5\exported_inference_graph-20000 --eval_training_data --run_once --sample_1_of_n_eval_examples 1 --sample_1_of_n_eval_on_train_examples 1
+## Note: must edit the pipeline config file to have train_input_reader.tf_record_input_reader.input_path point to the test record
 
 python test_dl.py D:\tensorflow\projects\PlantClumpDetection\annotations\SSDlite\training4\exported_inference_graph-22000\frozen_inference_graph.pb D:\tensorflow\projects\PlantClumpDetection\annotations\object-detection.pbtxt -i D:\tensorflow\projects\PlantClumpDetection\git\datasets\annotations\img_patches_8_png -g D:\tensorflow\projects\PlantClumpDetection\git\object_detection\annotations\pascalvoc_labels_patched_oneclass\test -c 0.4 -q -o D:\tensorflow\projects\PlantClumpDetection\annotations\SSDlite\training4\exported_inference_graph-22000\tests\img_patches_8_png_test_dataset --save-aggregate-statistics-readout --save-aggregate-statistics-filename ssdOutStats --save-aggregate-statistics
+
