@@ -21,7 +21,7 @@ def show_bounding_boxes(dir_name="Umair"):
     for root, dirs, files in os.walk(images_path):
         for filename in files:
             image = io.imread(root+'//'+filename)
-            annotations_file = open(dir_name+'_annotations'+'/'+filename.replace(".JPG",".txt"),"r")
+            annotations_file = open(dir_name.replace('Umair','Umair_annotations')+'/'+filename.replace(".JPG",".txt"),"r")
             fig = plt.figure(figsize=(10,10))
             boxes = annotations_file.readlines()
             for box in boxes:
@@ -43,26 +43,20 @@ def cropped_bounding_boxes(dir_name='Umair',filename='IMG_4426.JPG'):
     
     try:
         image = io.imread(dir_name+'//'+filename)
-        annotations_file = open(dir_name+'_annotations'+'/'+filename.replace(".JPG",".txt"),"r")
+        annotations_file = open(dir_name.replace('Umair','Umair_annotations')+'/'+filename.replace(".JPG",".txt"),"r")
     except:
         sys.exit("Cannot Find the specified direcotry/Image")
     
     boxes = annotations_file.readlines()
     cropped_images=[]
     image_labels = []
-    fig = plt.figure(figsize=(10,10))
     for box in boxes:
         coordinates = np.array(box.split())
         coordinates = coordinates.astype(np.float)
         x = (coordinates[1] - coordinates[3]/2)*image.shape[1]
         y = (coordinates[2] - coordinates[4]/2)*image.shape[0]
-        rect = pt.Rectangle((x,y),coordinates[3]*image.shape[1],coordinates[4]*image.shape[0],linewidth=2,edgecolor='y',facecolor='none')
         cropped_images.append(image[ceil(y):ceil(y+coordinates[4]*image.shape[0]),ceil(x):ceil(x+coordinates[3]*image.shape[1]),])
         image_labels.append(int(coordinates[0]+1))
-        ax2 = fig.add_subplot(111, aspect='equal')
-        ax2.add_patch(rect)
-    plt.title("Orignial Image with Bounding Boxes")
-    plt.imshow(image)
     return cropped_images,image_labels
 
 
