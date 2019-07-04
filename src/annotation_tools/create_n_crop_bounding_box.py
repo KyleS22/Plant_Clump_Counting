@@ -57,12 +57,21 @@ def cropped_bounding_boxes(dir_name='Umair',filename='IMG_4426.JPG'):
         x = (coordinates[1] - coordinates[3]/2)*image.shape[1]
         y = (coordinates[2] - coordinates[4]/2)*image.shape[0]
         rect = pt.Rectangle((x,y),coordinates[3]*image.shape[1],coordinates[4]*image.shape[0],linewidth=2,edgecolor='y',facecolor='none')
-        cropped_images.append(image[ceil(y):ceil(y+coordinates[4]*image.shape[0]),ceil(x):ceil(x+coordinates[3]*image.shape[1]),])
+       
+         
+        start_y = int(ceil(y))
+        end_y = int(ceil(y+coordinates[4] * image.shape[0]))
+
+        start_x = int(ceil(x))
+        end_x = int(ceil(x+coordinates[3]*image.shape[1])) 
+        
+        cropped_images.append(image[start_y:end_y, start_x:end_x])#image[ceil(y):ceil(y+coordinates[4]*image.shape[0]),ceil(x):ceil(x+coordinates[3]*image.shape[1]),])
         image_labels.append(int(coordinates[0]+1))
         ax2 = fig.add_subplot(111, aspect='equal')
         ax2.add_patch(rect)
     plt.title("Orignial Image with Bounding Boxes")
     plt.imshow(image)
+    #plt.show()
     return cropped_images,image_labels
 
 
