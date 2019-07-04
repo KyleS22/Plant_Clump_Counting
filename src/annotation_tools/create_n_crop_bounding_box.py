@@ -50,7 +50,6 @@ def cropped_bounding_boxes(dir_name='Umair',filename='IMG_4426.JPG'):
     boxes = annotations_file.readlines()
     cropped_images=[]
     image_labels = []
-    fig = plt.figure(figsize=(10,10))
     for box in boxes:
         coordinates = np.array(box.split())
         coordinates = coordinates.astype(np.float)
@@ -67,12 +66,7 @@ def cropped_bounding_boxes(dir_name='Umair',filename='IMG_4426.JPG'):
         
         cropped_images.append(image[start_y:end_y, start_x:end_x])#image[ceil(y):ceil(y+coordinates[4]*image.shape[0]),ceil(x):ceil(x+coordinates[3]*image.shape[1]),])
         image_labels.append(int(coordinates[0]+1))
-        ax2 = fig.add_subplot(111, aspect='equal')
-        ax2.add_patch(rect)
-    plt.title("Orignial Image with Bounding Boxes")
-    plt.imshow(image)
-    #plt.show()
-    return cropped_images,image_labels
+    return cropped_images,image_labels, filename
 
 
 # Function Call Test
