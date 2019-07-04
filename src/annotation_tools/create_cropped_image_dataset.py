@@ -35,8 +35,12 @@ def main(input_dirs, out_dir):
         pbar.set_description("Cropping %s" % image_dir)
 
         for image in images:
-
-            cropped_images, image_labels, filename = cnc.cropped_bounding_boxes(image_dir,image)
+            
+            try:
+                cropped_images, image_labels, filename = cnc.cropped_bounding_boxes(image_dir,image)
+            except:
+                continue
+                pbar.update(1)
 
             for cropped_image, label in zip(cropped_images, image_labels):
 
