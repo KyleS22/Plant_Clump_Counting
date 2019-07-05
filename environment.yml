@@ -9,3 +9,4 @@ dependencies:
   - PIL
   - matplotlib
   - skimage
+  - scikit-learn
