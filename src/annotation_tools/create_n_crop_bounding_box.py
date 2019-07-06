@@ -21,7 +21,7 @@ def show_bounding_boxes(dir_name="Umair"):
     for root, dirs, files in os.walk(images_path):
         for filename in files:
             image = io.imread(root+'//'+filename)
-            annotations_file = open(dir_name.replace('Umair','Umair_annotations')+'/'+filename.replace(".JPG",".txt"),"r")
+            annotations_file = open(dir_name.replace(dir_name, dir_name+'_annotations')+'/'+filename.replace(".JPG",".txt"),"r")
             fig = plt.figure(figsize=(10,10))
             boxes = annotations_file.readlines()
             for box in boxes:
@@ -43,7 +43,7 @@ def cropped_bounding_boxes(dir_name='Umair',filename='IMG_4426.JPG'):
     
     try:
         image = io.imread(dir_name+'//'+filename)
-        annotations_file = open(dir_name.replace(dir_name, dir_name+'_annotations')+'/'+filename.replace(".JPG",".txt"),"r")
+        annotations_file = open(dir_name.replace(dir_name.split('/')[0], dir_name.split('/')[0]+'_annotations')+'/'+filename.replace(".JPG",".txt"),"r")
     except:
         sys.exit("Cannot Find the specified direcotry/Image")
     
@@ -71,7 +71,7 @@ def cropped_bounding_boxes(dir_name='Umair',filename='IMG_4426.JPG'):
 
 
 # Function Call Test
-#cropped_images,image_labels = cropped_bounding_boxes('Umair','IMG_4456.JPG')
+#cropped_images,image_labels = cropped_bounding_boxes('Data/Training','IMG_4456.JPG')
 #for i in range(0,len(cropped_images)):
 #    fig = plt.figure()
 #    plt.title("Clump Image: "+str(i+1)+" with: "+str(image_labels[i])+" Plants")
