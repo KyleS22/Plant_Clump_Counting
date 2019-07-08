@@ -105,6 +105,7 @@ venv.bak/
 
 # vim
 *.swp
+*.swo
 
 # Data Directories
 IPhone_Annotations
