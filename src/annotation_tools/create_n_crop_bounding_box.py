@@ -64,7 +64,6 @@ def cropped_bounding_boxes(dir_name='Umair',filename='IMG_4426.JPG'):
         start_x = int(ceil(x))
         end_x = int(ceil(x+coordinates[3]*image.shape[1])) 
         
-<<<<<<< HEAD
         cropped_images.append(image[start_y:end_y, start_x:end_x])
         
         image_labels.append(int(coordinates[0]+1))
