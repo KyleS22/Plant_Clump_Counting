@@ -1,7 +1,12 @@
 name: plant_counting
 channels:
   - defaults
+  - conda-forge
 dependencies:
   - numpy
   - tqdm
-
+  - keras
+  - PIL
+  - matplotlib
+  - skimage
+  - scikit-learn

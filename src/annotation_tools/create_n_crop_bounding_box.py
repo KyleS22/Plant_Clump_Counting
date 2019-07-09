@@ -45,7 +45,8 @@ def cropped_bounding_boxes(dir_name='Umair',filename='IMG_4426.JPG'):
         image = io.imread(dir_name+'//'+filename)
         annotations_file = open(dir_name.replace(dir_name, dir_name+'_annotations')+'/'+filename.replace(".JPG",".txt"),"r")
     except:
-        sys.exit("Cannot Find the specified direcotry/Image")
+        raise Exception("Cannot find the specified directory %s" & dir_name+'//'+filename)
+        #sys.exit("Cannot Find the specified direcotry/Image %s" % dir_name + '//' + filename)
     
     boxes = annotations_file.readlines()
     cropped_images=[]
@@ -56,13 +57,14 @@ def cropped_bounding_boxes(dir_name='Umair',filename='IMG_4426.JPG'):
         x = (coordinates[1] - coordinates[3]/2)*image.shape[1]
         y = (coordinates[2] - coordinates[4]/2)*image.shape[0]
 
-          
+       
         start_y = int(ceil(y))
         end_y = int(ceil(y+coordinates[4] * image.shape[0]))
 
         start_x = int(ceil(x))
         end_x = int(ceil(x+coordinates[3]*image.shape[1])) 
         
+<<<<<<< HEAD
         cropped_images.append(image[start_y:end_y, start_x:end_x])
         
         image_labels.append(int(coordinates[0]+1))
