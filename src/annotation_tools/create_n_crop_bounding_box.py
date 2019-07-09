@@ -42,7 +42,7 @@ def cropped_bounding_boxes(dir_name='Umair',filename='IMG_4426.JPG'):
     #The class_label_array will represent the TRUE class of same image on corresponding cropped_image array
     
     try:
-        image = io.imread(dir_name+'/'+filename)
+        image = io.imread(dir_name+'/'+filename, plugin='matplotlib')
         annotations_file = open(dir_name + '_annotations' + '/' + filename.replace(".JPG", ".txt"), 'r')#dir_name.replace(dir_name.split('/')[0], dir_name.split('/')[0]+'_annotations')+'/'+filename.replace(".JPG",".txt"),"r")
     except:
         raise Exception("Cannot find the specified directory %s" & dir_name+'//'+filename)
@@ -51,23 +51,29 @@ def cropped_bounding_boxes(dir_name='Umair',filename='IMG_4426.JPG'):
     boxes = annotations_file.readlines()
     cropped_images=[]
     image_labels = []
+        
+
     for box in boxes:
         coordinates = np.array(box.split())
         coordinates = coordinates.astype(np.float)
         x = (coordinates[1] - coordinates[3]/2)*image.shape[1]
-        y = (coordinates[2] - coordinates[4]/2)*image.shape[0]
 
-       
+        y = (coordinates[2] - coordinates[4]/2)*image.shape[0]
+        
+
         start_y = int(ceil(y))
         end_y = int(ceil(y+coordinates[4] * image.shape[0]))
 
         start_x = int(ceil(x))
         end_x = int(ceil(x+coordinates[3]*image.shape[1])) 
         
+
         cropped_images.append(image[start_y:end_y, start_x:end_x])
         
+
         image_labels.append(int(coordinates[0]+1))
-   
+        
+
     return cropped_images,image_labels, filename
 
 
