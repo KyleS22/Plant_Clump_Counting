@@ -30,7 +30,6 @@ def main(input_dirs, out_dir):
     for image_dir in input_dirs:
         
         images = os.listdir(image_dir)
-       
         pbar = tqdm(images)
         pbar.set_description("Cropping %s" % image_dir)
 
@@ -38,9 +37,11 @@ def main(input_dirs, out_dir):
             
             try:
                 cropped_images, image_labels, filename = cnc.cropped_bounding_boxes(image_dir,image)
+
             except:
-                continue
                 pbar.update(1)
+                continue
+                
 
             for cropped_image, label in zip(cropped_images, image_labels):
 
@@ -52,6 +53,7 @@ def main(input_dirs, out_dir):
                 image_name = os.path.join(cropped_out_dir, filename)
                 
                 num = 1
+                
                 while os.path.exists(image_name):
                     name_split = os.path.splitext(image_name)
                     

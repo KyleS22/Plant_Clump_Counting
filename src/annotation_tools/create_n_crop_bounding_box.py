@@ -42,8 +42,8 @@ def cropped_bounding_boxes(dir_name='Umair',filename='IMG_4426.JPG'):
     #The class_label_array will represent the TRUE class of same image on corresponding cropped_image array
     
     try:
-        image = io.imread(dir_name+'//'+filename)
-        annotations_file = open(dir_name.replace(dir_name.split('/')[0], dir_name.split('/')[0]+'_annotations')+'/'+filename.replace(".JPG",".txt"),"r")
+        image = io.imread(dir_name+'/'+filename)
+        annotations_file = open(dir_name + '_annotations' + '/' + filename.replace(".JPG", ".txt"), 'r')#dir_name.replace(dir_name.split('/')[0], dir_name.split('/')[0]+'_annotations')+'/'+filename.replace(".JPG",".txt"),"r")
     except:
         raise Exception("Cannot find the specified directory %s" & dir_name+'//'+filename)
         #sys.exit("Cannot Find the specified direcotry/Image %s" % dir_name + '//' + filename)
@@ -67,8 +67,8 @@ def cropped_bounding_boxes(dir_name='Umair',filename='IMG_4426.JPG'):
         cropped_images.append(image[start_y:end_y, start_x:end_x])
         
         image_labels.append(int(coordinates[0]+1))
-    
-    return cropped_images,image_labels
+   
+    return cropped_images,image_labels, filename
 
 
 # Function Call Test
