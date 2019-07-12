@@ -10,6 +10,7 @@ Description: A module containing functions that create a training and testing da
 """
 
 import os
+import argparse
 
 from sklearn.model_selection import train_test_split
 
@@ -127,3 +128,18 @@ def create_train_and_test_split(data_dir, train_dir, test_dir, labels_to_ignore=
     _split_train_and_test_data(data_dir, train_dir, test_dir, images, labels, test_size=test_size)
 
     return images, labels
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="Create a train and test split of images.")
+
+    parser.add_argument("data_dir", help="The directory to get the data from")
+    parser.add_argument("train_dir", help="The directory to output the training set to")
+    parser.add_argument("test_dir", help="The directory to output the testing set to")
+
+    args = parser.parse_args()
+    
+    print("Creating train test split...")
+    create_train_and_test_split(args.data_dir, args.train_dir, args.test_dir)
+    print("Done!\n")
+
