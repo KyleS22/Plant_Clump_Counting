@@ -8,5 +8,5 @@ dependencies:
   - keras
   - PIL
   - matplotlib
-  - skimage
+  - scikit-image
   - scikit-learn

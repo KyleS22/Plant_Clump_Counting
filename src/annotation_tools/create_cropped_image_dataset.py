@@ -15,6 +15,8 @@ import os
 import create_n_crop_bounding_box as cnc
 import matplotlib.pyplot as plt
 import skimage.io as io
+import sys
+
 from tqdm import tqdm
 
 def main(input_dirs, out_dir):
@@ -26,6 +28,12 @@ def main(input_dirs, out_dir):
     :returns: None
     """
     
+    if not os.path.exists(out_dir):
+        try:
+            os.mkdir(out_dir)
+        except:
+            print("Could not create output dir.  Exiting.")
+            sys.exit(1)
 
     for image_dir in input_dirs:
         
@@ -52,14 +60,17 @@ def main(input_dirs, out_dir):
 
                 image_name = os.path.join(cropped_out_dir, filename)
                 
-                num = 1
+
+                if os.path.exists(image_name):
+                    continue
+                #num = 1
                 
-                while os.path.exists(image_name):
-                    name_split = os.path.splitext(image_name)
-                    
-                    image_name = name_split[0] + "_" + str(num) + name_split[1]
-                    num += 1
-                
+                #while os.path.exists(image_name):
+                #    name_split = os.path.splitext(image_name)
+                #    
+                #    image_name = name_split[0] + "_" + str(num) + name_split[1]
+                #    num += 1
+               # 
                 io.imsave(image_name, cropped_image)
 
             pbar.update(1) 
