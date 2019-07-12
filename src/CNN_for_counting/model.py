@@ -19,6 +19,8 @@ from keras.preprocessing.image import ImageDataGenerator
 
 from keras.layers import Input, Dense, Conv2D, MaxPooling2D, UpSampling2D
 from keras.models import Model
+from sklearn.metrics import mean_squared_error
+
 import numpy as np
 import os
 import shutil
@@ -147,7 +149,35 @@ def _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs
     validation_data=validation_generator, validation_steps = validation_generator.samples // batch_size, epochs =
     num_epochs)
 
-    # TODO: Test the model
+    test_labels = os.listdir(test_data_dir)
+
+
+    test_images = []
+    test_image_labels = []
+
+    for label in test_labels:
+        for image in os.listdir(os.path.join(TEST_DIR, label)):
+            test_images.append(image)
+            test_image_labels.append(label)
+
+    predictions = []
+    correct_values = []
+    for img, label in zip(test_images, test_image_labels):
+
+        image = load_img(os.path.join(test_dir, label, img), target_size=(224, 224))
+        ## convert the image pixels to a numpy array
+        image = img_to_array(image)
+        ## reshape data for the model
+        image = image.reshape((1, image.shape[0], image.shape[1], image.shape[2]))
+    
+        prediction = model.predict(image)
+        predictions.append(prediction)
+        correct_values.append(int(label))
+
+
+
+    print("Testing MSE %.3f " % mean_squared_error(predictions, correct_values))
+
     
     return model
     
