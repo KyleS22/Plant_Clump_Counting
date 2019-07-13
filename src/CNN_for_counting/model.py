@@ -12,7 +12,7 @@ from keras.preprocessing.image import load_img
 from keras.preprocessing.image import img_to_array
 from keras.applications.vgg16 import preprocess_input
 from keras.applications.vgg16 import decode_predictions
-#from keras.applications.vgg16 import VGG16
+from keras.applications.vgg16 import VGG16
 from keras.layers import Flatten, Dense
 #from keras.models import Model
 from keras.preprocessing.image import ImageDataGenerator
@@ -38,17 +38,20 @@ def _create_model():
     
     :returns: The model 
     """
-    
+    vgg16_model = VGG16(weights=None, include_top=False)
+        
     input_img = Input(shape=(224, 224, 3))  # adapt this if using `channels_first` image data format
 
-    x = Conv2D(16, (3, 3), activation='relu', padding='same')(input_img)
-    x = MaxPooling2D((2, 2), padding='same')(x)
-    x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
-    x = MaxPooling2D((2, 2), padding='same')(x)
-    x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
-    x = MaxPooling2D((2, 2), padding='same')(x)
+    #x = Conv2D(16, (3, 3), activation='relu', padding='same')(input_img)
+    #x = MaxPooling2D((2, 2), padding='same')(x)
+    #x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+    #x = MaxPooling2D((2, 2), padding='same')(x)
+    #x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+    #x = MaxPooling2D((2, 2), padding='same')(x)
 
-    x = Flatten(name='flatten')(x)
+    output_vgg16 = vgg16_model(input_img)
+
+    x = Flatten(name='flatten')(output_vgg16)#(x)
     x = Dense(8, activation='softmax', name='Pre-Predictions')(x)
     x = Dense(1, kernel_initializer='normal')(x)
 
@@ -56,7 +59,7 @@ def _create_model():
     counter = Model(input_img, x)
 
 
-    counter.compile(optimizer='adam', loss='mean_squared_error', metrics=['acc', 'mae'])
+    counter.compile(optimizer='adam', loss='mean_squared_error', metrics=['mse', 'mae'])
     counter.summary()
 
     return counter
@@ -125,11 +128,19 @@ def _create_train_and_validation_generators(training_data_dir, batch_size, targe
     # Create generators for the data
     train_datagen = ImageDataGenerator(rescale=1./255, data_format='channels_last', shear_range=0.2, zoom_range=0.2, horizontal_flip=True, validation_split=0.2)
 
-    train_generator = train_datagen.flow_from_directory(training_data_dir, target_size=target_size, batch_size=batch_size, subset="training")
-    validation_generator = train_datagen.flow_from_directory(training_data_dir, target_size=target_size, batch_size=batch_size, subset="validation")
+    train_generator = train_datagen.flow_from_directory(training_data_dir, target_size=target_size,
+        batch_size=batch_size, subset="training", class_mode='sparse')
+    
+    validation_generator = train_datagen.flow_from_directory(training_data_dir, target_size=target_size,
+    batch_size=batch_size, subset="validation", class_mode='sparse')
     
     return train_generator, validation_generator
 
+def _regression_flow_from_directory(flow_from_directory_gen, list_of_values):
+    
+    for x, y in flow_from_directory_gen:
+        values = [list_of_values[int(y[i])] for i in range(len(y))]
+        yield x, values
 
 def _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs):
     """
@@ -142,11 +153,20 @@ def _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs
     :param num_epochs: The number of epochs to use when training
     :returns: The trained model
     """
-
     train_generator, validation_generator = _create_train_and_validation_generators(training_data_dir, batch_size)
 
-    model.fit_generator(train_generator, steps_per_epoch=train_generator.samples // batch_size,
-    validation_data=validation_generator, validation_steps = validation_generator.samples // batch_size, epochs =
+    # TODO: The generators don't work for regression, because the folders imply a class structure
+
+    label_map = train_generator.class_indices.keys()
+   
+    list_of_values = [int(x) for x in label_map]
+    
+    reg_train_generator = _regression_flow_from_directory(train_generator, list_of_values)
+    reg_validation_generator = _regression_flow_from_directory(validation_generator, list_of_values)
+
+
+    model.fit_generator(reg_train_generator, steps_per_epoch=train_generator.samples // batch_size,
+    validation_data=reg_validation_generator, validation_steps = validation_generator.samples // batch_size, epochs =
     num_epochs)
 
     test_labels = os.listdir(test_data_dir)
@@ -156,7 +176,7 @@ def _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs
     test_image_labels = []
 
     for label in test_labels:
-        for image in os.listdir(os.path.join(TEST_DIR, label)):
+        for image in os.listdir(os.path.join(test_data_dir, label)):
             test_images.append(image)
             test_image_labels.append(label)
 
@@ -173,7 +193,8 @@ def _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs
         prediction = model.predict(image)
         predictions.append(prediction)
         correct_values.append(int(label))
-
+        
+        print(str(prediction), label)
 
 
     print("Testing MSE %.3f " % mean_squared_error(predictions, correct_values))

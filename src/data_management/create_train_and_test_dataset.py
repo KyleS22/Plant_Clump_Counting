@@ -70,6 +70,15 @@ def _create_train_and_test_dirs(train_dir, test_dir, overwrite=False):
 
         else:
             raise Exception("The train and test directories already exist")
+    else:
+        try:
+            os.mkdir(train_dir)
+            os.mkdir(test_dir)
+        except Exception as e:
+            print(e)
+            raise Exception("Could not make train and test dirs")
+
+
 
 def _split_train_and_test_data(data_dir, train_dir, test_dir, images, image_labels, test_size=0.2):
     """
@@ -136,10 +145,10 @@ if __name__ == "__main__":
     parser.add_argument("data_dir", help="The directory to get the data from")
     parser.add_argument("train_dir", help="The directory to output the training set to")
     parser.add_argument("test_dir", help="The directory to output the testing set to")
-
+    parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
     
     print("Creating train test split...")
-    create_train_and_test_split(args.data_dir, args.train_dir, args.test_dir)
+    create_train_and_test_split(args.data_dir, args.train_dir, args.test_dir, overwrite_old_data=args.overwrite)
     print("Done!\n")
 
