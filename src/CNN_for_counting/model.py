@@ -159,7 +159,7 @@ def _create_test_generator(test_data_dir, batch_size=8, target_size=(224, 224)):
 
     test_datagen = ImageDataGenerator(rescale=1./255, data_format='channels_last')
 
-    test_generator = test_datagen.flow_from_directory(test_data_dir, target_size=target_size, batch_size=batch_size, class_mode='sparse')
+    test_generator = test_datagen.flow_from_directory(test_data_dir, shuffle=False, target_size=target_size, batch_size=batch_size, class_mode='sparse')
 
     return test_generator
     
@@ -239,11 +239,19 @@ def _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs
     test_generator = _create_test_generator(test_data_dir)
     reg_test_generator = _regression_flow_from_directory(test_generator, test_labels)
 
-    test_history = LossHistory()
 
-    model.evaluate_generator(reg_test_generator, callbacks=[test_history])
+    results = model.evaluate_generator(reg_test_generator, steps=test_generator.samples // test_generator.batch_size)
     
-    test_scores = {"mean_squared_error": test_history.mean_squared_error, "mean_absolute_error": test_history.mean_absolute_error}
+    print("TEST RESULTS")
+    test_scores = {}
+    for name, score in zip(model.metrics_names, results):
+        test_scores[name] = score
+        
+        print("{}: {}".format(name, score))
+    
+    
+
+
     #test_labels = os.listdir(test_data_dir)
 
 
