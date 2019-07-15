@@ -22,15 +22,18 @@ from keras.layers import Input, Dense, Conv2D, MaxPooling2D, UpSampling2D
 from keras.models import Model, model_from_json
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 
+
 import numpy as np
 import os
 import shutil
 import argparse
 import csv
 import sys
+from datetime import datetime
+import json
+
 sys.path.append("../data_management")
 
-#import create_train_and_test_dataset as train_test_split
 class LossHistory(Callback):
     def on_train_begin(self, logs={}):
         self.losses = []
@@ -86,23 +89,53 @@ def _save_model(model, out_dir,  name="model"):
     :returns: None
     """
 
-    if not os.path.exists(out_dir):
-        os.mkdir(out_dir)
+
+    os.mkdir(out_dir)
+    
 
     model_json = model.to_json()
 
     json_name = name + ".json"
     weights_name = name + ".h5"
-    
+    summary_name = name + "_summary.txt"
+
     json_path = os.path.join(out_dir, json_name)
     weights_path = os.path.join(out_dir, weights_name)
+    summary_path = os.path.join(out_dir, summary_name)
 
     with open(json_path, 'w') as json_file:
         json_file.write(model_json)
         
     model.save_weights(weights_path) 
     
+    with open(summary_path, 'w') as summary_file:
+        model.summary(print_fn=lambda x: summary_file.write(x + '\n'))
 
+def _save_config_json(out_dir, args, start_time=None):
+    """
+    Save the configurations of this run to a JSON file
+    
+    :param out_dir: The directory to store the save file in
+    :param args: The argparse arguments used to run the program
+    :param start_time=None: The Start time of the program.  Default is none
+    :returns: None
+    """
+    end_time = str(datetime.now().strftime('%Y_%m_%d_%H_%M_%S'))
+    config = {}
+    
+    for arg in vars(args):
+        config[arg] = getattr(args, arg)
+
+    config['start_time'] = start_time
+    config['end_time'] = end_time
+   
+    out_path = os.path.join(out_dir, 'config.json')
+
+    with open(out_path, 'w') as config_json:
+        json.dump(config, config_json)
+
+
+   
 def _load_model(json_path, weights_path):
     """
     Load a model from a json, and its weights from an h5 file
@@ -251,47 +284,7 @@ def _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs
         test_scores[name] = score
         
         print("{}: {}".format(name, score))
-    
-    
-
-
-    #test_labels = os.listdir(test_data_dir)
-
-
-    #test_images = []
-    #test_image_labels = []
-
-    #for label in test_labels:
-    #    for image in os.listdir(os.path.join(test_data_dir, label)):
-    #        test_images.append(image)
-    #        test_image_labels.append(label)
-
-    #predictions = []
-    #correct_values = []
-    #for img, label in zip(test_images, test_image_labels):
-
-    #    image = load_img(os.path.join(test_data_dir, label, img), target_size=(224, 224))
-    #    ## convert the image pixels to a numpy array
-    #    image = img_to_array(image)
-    #    ## reshape data for the model
-    #    image = image.reshape((1, image.shape[0], image.shape[1], image.shape[2]))
-    #
-    #    prediction = model.predict(image)
-    #    predictions.append(prediction[0][0])
-    #    correct_values.append(int(label))
-    #    
-    #    print(str(prediction), label)
-
-
-    #mse = mean_squared_error(predictions, correct_values)
-    #mae = mean_absolute_error(predictions, correct_values)
-    #
-    #print("Testing MSE %.3f " % mse)
-    #print("Testing MAE %.3f " % mae)
-    #
-    #test_scores = {"mean_squared_error": mse, "mean_absolute_error": mae}
-
-     
+         
     return model, history, test_scores
     
 def create_and_train_new_model(training_data_dir, test_data_dir, batch_size, num_epochs, model_save_dir=None, model_name="model"):
@@ -362,9 +355,17 @@ if __name__ == "__main__":
     parser.add_argument('--model_name', default="model", help="The name of the model.")
 
     args = parser.parse_args()
+    
+    start_time = str(datetime.now().strftime('%Y_%m_%d_%H_%M_%S'))
+    
+    if args.model_save_dir is not None and os.path.exists(args.model_save_dir):
+        print("The model save path you have chosen already exists.  Please choose another.")
+        sys.exit(1)
 
     if args.model_load_dir is None:
         create_and_train_new_model(args.training_data_dir, args.test_data_dir, args.batch_size, args.num_epochs, model_save_dir=args.model_save_dir, model_name=args.model_name)
 
     else:
         load_and_retrain_model(args.model_load_dir, args.training_data_dir, args.test_data_dir, args.batch_size, args.num_epochs, model_name=args.model_name, model_save_dir=args.model_save_dir)
+
+    _save_config_json(args.model_save_dir, args, start_time=start_time)
