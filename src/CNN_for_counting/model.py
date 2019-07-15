@@ -19,7 +19,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.callbacks import Callback
 
 from keras.layers import Input, Dense, Conv2D, MaxPooling2D, UpSampling2D
-from keras.models import Model
+from keras.models import Model, model_from_json
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 import numpy as np
@@ -123,6 +123,9 @@ def _load_model(json_path, weights_path):
     loaded_model = model_from_json(loaded_json_model)
 
     loaded_model.load_weights(weights_path)
+    
+    loaded_model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mse', 'mae'])
+    loaded_model.summary()
 
     return loaded_model
 
