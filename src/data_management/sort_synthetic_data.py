@@ -33,17 +33,19 @@ def sort(data_path, out_path):
     pbar.set_description("Sorting Synthetic Images")
      
     for image in images:
-        parts = '_'.join(image.split('_')[:-1])
+        parts = image.split('_')
+        
 
-        label = parts[0]
-
-        if 'bin' in parts:
+        label = str(int(parts[0]))
+        
+        if 'bin.png' in parts:
             pbar.update(1)
             continue
 
         image_name = parts[1]
-
+        
         label_dir = os.path.join(out_path, label)
+        
 
         if not os.path.exists(label_dir):
             os.mkdir(label_dir)
