@@ -62,6 +62,7 @@ def _create_model():
     output_vgg16 = vgg16_model(input_img)
 
     x = Flatten(name='flatten')(output_vgg16)#(x)
+    x = Dense(32, kernel_initializer='normal')(x)
     x = Dense(20, kernel_initializer='normal', name='Pre-Predictions')(x)
     x = Dense(1, kernel_initializer='normal')(x)
 
@@ -146,6 +147,23 @@ def _create_train_and_validation_generators(training_data_dir, batch_size, targe
     
     return train_generator, validation_generator
 
+def _create_test_generator(test_data_dir, batch_size=8, target_size=(224, 224)):
+    """
+    Create an image generator for the testing set
+    
+    :param test_data_dir: The directory containing the images
+    :param batch_size: The batch size.  Defaults to 8
+    :param target_size: The target image size for the generator.  Default is (224, 224)
+    :returns: A testing image generator
+    """
+
+    test_datagen = ImageDataGenerator(rescale=1./255, data_format='channels_last')
+
+    test_generator = test_datagen.flow_from_directory(test_data_dir, target_size=target_size, batch_size=batch_size, class_mode='sparse')
+
+    return test_generator
+    
+
 def _regression_flow_from_directory(flow_from_directory_gen, list_of_values):
     
     for x, y in flow_from_directory_gen:
@@ -214,42 +232,53 @@ def _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs
     model.fit_generator(reg_train_generator, steps_per_epoch=train_generator.samples // batch_size,
     validation_data=reg_validation_generator, validation_steps = validation_generator.samples // batch_size, epochs =
     num_epochs, callbacks=[history])
-
-    test_labels = os.listdir(training_data_dir)#test_data_dir)
-
-
-    test_images = []
-    test_image_labels = []
-
-    for label in test_labels:
-        for image in os.listdir(os.path.join(training_data_dir, label)):#test_data_dir, label)):
-            test_images.append(image)
-            test_image_labels.append(label)
-
-    predictions = []
-    correct_values = []
-    for img, label in zip(test_images, test_image_labels):
-
-        image = load_img(os.path.join(training_data_dir, label, img), target_size=(224,224))#test_data_dir, label, img), target_size=(224, 224))
-        ## convert the image pixels to a numpy array
-        image = img_to_array(image)
-        ## reshape data for the model
-        image = image.reshape((1, image.shape[0], image.shape[1], image.shape[2]))
     
-        prediction = model.predict(image)
-        predictions.append(prediction[0][0])
-        correct_values.append(int(label))
-        
-        print(str(prediction), label)
+    test_labels = os.listdir(test_data_dir)
+    test_labels = [int(x) for x in test_labels]
 
+    test_generator = _create_test_generator(test_data_dir)
+    reg_test_generator = _regression_flow_from_directory(test_generator, test_labels)
 
-    mse = mean_squared_error(predictions, correct_values)
-    mae = mean_absolute_error(predictions, correct_values)
-    print("REMEMBER THIS IS FOR THE TRAINING DATA THESE NUMBERS SHOULD BE REALLY GOOD BUT ARE WRONG!!!")
-    print("Testing MSE %.3f " % mse)
-    print("Testing MAE %.3f " % mae)
+    test_history = LossHistory()
+
+    model.evaluate_generator(reg_test_generator, callbacks=[test_history])
     
-    test_scores = {"mean_squared_error": mse, "mean_absolute_error": mae}
+    test_scores = {"mean_squared_error": test_history.mean_squared_error, "mean_absolute_error": test_history.mean_absolute_error}
+    #test_labels = os.listdir(test_data_dir)
+
+
+    #test_images = []
+    #test_image_labels = []
+
+    #for label in test_labels:
+    #    for image in os.listdir(os.path.join(test_data_dir, label)):
+    #        test_images.append(image)
+    #        test_image_labels.append(label)
+
+    #predictions = []
+    #correct_values = []
+    #for img, label in zip(test_images, test_image_labels):
+
+    #    image = load_img(os.path.join(test_data_dir, label, img), target_size=(224, 224))
+    #    ## convert the image pixels to a numpy array
+    #    image = img_to_array(image)
+    #    ## reshape data for the model
+    #    image = image.reshape((1, image.shape[0], image.shape[1], image.shape[2]))
+    #
+    #    prediction = model.predict(image)
+    #    predictions.append(prediction[0][0])
+    #    correct_values.append(int(label))
+    #    
+    #    print(str(prediction), label)
+
+
+    #mse = mean_squared_error(predictions, correct_values)
+    #mae = mean_absolute_error(predictions, correct_values)
+    #
+    #print("Testing MSE %.3f " % mse)
+    #print("Testing MAE %.3f " % mae)
+    #
+    #test_scores = {"mean_squared_error": mse, "mean_absolute_error": mae}
 
      
     return model, history, test_scores
