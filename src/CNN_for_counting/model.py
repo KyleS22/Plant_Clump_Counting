@@ -16,21 +16,31 @@ from keras.applications.vgg16 import VGG16
 from keras.layers import Flatten, Dense
 #from keras.models import Model
 from keras.preprocessing.image import ImageDataGenerator
+from keras.callbacks import Callback
 
 from keras.layers import Input, Dense, Conv2D, MaxPooling2D, UpSampling2D
 from keras.models import Model
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 import numpy as np
 import os
 import shutil
 import argparse
-
+import csv
 import sys
 sys.path.append("../data_management")
 
 #import create_train_and_test_dataset as train_test_split
+class LossHistory(Callback):
+    def on_train_begin(self, logs={}):
+        self.losses = []
+        self.mean_squared_error = []
+        self.mean_absolute_error = []
 
+    def on_batch_end(self, batch, logs={}):
+        self.losses.append(logs.get('loss'))
+        self.mean_squared_error.append(logs.get('mean_squared_error'))
+        self.mean_absolute_error.append(logs.get('mean_absolute_error'))
 
 def _create_model():
     """
@@ -38,7 +48,7 @@ def _create_model():
     
     :returns: The model 
     """
-    vgg16_model = VGG16(weights=None, include_top=False)
+    vgg16_model = VGG16(weights='imagenet', include_top=False)
         
     input_img = Input(shape=(224, 224, 3))  # adapt this if using `channels_first` image data format
 
@@ -52,7 +62,7 @@ def _create_model():
     output_vgg16 = vgg16_model(input_img)
 
     x = Flatten(name='flatten')(output_vgg16)#(x)
-    x = Dense(8, activation='softmax', name='Pre-Predictions')(x)
+    x = Dense(20, kernel_initializer='normal', name='Pre-Predictions')(x)
     x = Dense(1, kernel_initializer='normal')(x)
 
 
@@ -76,7 +86,7 @@ def _save_model(model, out_dir,  name="model"):
     """
 
     if not os.path.exists(out_dir):
-        os.path.mkdir(out_dir)
+        os.mkdir(out_dir)
 
     model_json = model.to_json()
 
@@ -142,6 +152,43 @@ def _regression_flow_from_directory(flow_from_directory_gen, list_of_values):
         values = [list_of_values[int(y[i])] for i in range(len(y))]
         yield x, values
 
+def _save_history(out_path, history):
+    """
+    Save the given Loss History object to csv
+    
+    :param out_path: The path to save the csv to
+    :param history: The history object of the model to save
+    :returns: None
+    """
+    
+    
+    with open(os.path.join(out_path, 'loss_history.csv'), 'w') as csvfile:
+        fieldnames = ['loss', 'mean_squared_error', 'mean_absolute_error']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writeheader()
+        
+        for loss, mse, mae in zip(history.losses, history.mean_squared_error, history.mean_absolute_error):
+
+            writer.writerow({"loss": loss, "mean_squared_error": mse, "mean_absolute_error": mae})
+
+def _save_test_scores(out_path, test_scores):
+    """
+    Save the given test scores to a csv file
+    
+    :param out_path: The path to store the csv
+    :param test_scores: A dictionary containing the test scores to save
+    :returns: None
+    """
+    
+    with open(os.path.join(out_path, 'test_scores.csv'), 'w') as csvfile:
+        fieldnames = test_scores.keys()
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writeheader()
+        
+        writer.writerow(test_scores)
+
 def _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs):
     """
     Train the given model.
@@ -151,11 +198,9 @@ def _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs
     :param test_data_dir: The path to the testing data
     :param batch_size: The batch size to use when training
     :param num_epochs: The number of epochs to use when training
-    :returns: The trained model
+    :returns: The trained model, its training history, and a dictionary contaning test scores
     """
     train_generator, validation_generator = _create_train_and_validation_generators(training_data_dir, batch_size)
-
-    # TODO: The generators don't work for regression, because the folders imply a class structure
 
     label_map = train_generator.class_indices.keys()
    
@@ -163,20 +208,21 @@ def _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs
     
     reg_train_generator = _regression_flow_from_directory(train_generator, list_of_values)
     reg_validation_generator = _regression_flow_from_directory(validation_generator, list_of_values)
-
+   
+    history = LossHistory()
 
     model.fit_generator(reg_train_generator, steps_per_epoch=train_generator.samples // batch_size,
     validation_data=reg_validation_generator, validation_steps = validation_generator.samples // batch_size, epochs =
-    num_epochs)
+    num_epochs, callbacks=[history])
 
-    test_labels = os.listdir(test_data_dir)
+    test_labels = os.listdir(training_data_dir)#test_data_dir)
 
 
     test_images = []
     test_image_labels = []
 
     for label in test_labels:
-        for image in os.listdir(os.path.join(test_data_dir, label)):
+        for image in os.listdir(os.path.join(training_data_dir, label)):#test_data_dir, label)):
             test_images.append(image)
             test_image_labels.append(label)
 
@@ -184,23 +230,29 @@ def _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs
     correct_values = []
     for img, label in zip(test_images, test_image_labels):
 
-        image = load_img(os.path.join(test_dir, label, img), target_size=(224, 224))
+        image = load_img(os.path.join(training_data_dir, label, img), target_size=(224,224))#test_data_dir, label, img), target_size=(224, 224))
         ## convert the image pixels to a numpy array
         image = img_to_array(image)
         ## reshape data for the model
         image = image.reshape((1, image.shape[0], image.shape[1], image.shape[2]))
     
         prediction = model.predict(image)
-        predictions.append(prediction)
+        predictions.append(prediction[0][0])
         correct_values.append(int(label))
         
         print(str(prediction), label)
 
 
-    print("Testing MSE %.3f " % mean_squared_error(predictions, correct_values))
-
+    mse = mean_squared_error(predictions, correct_values)
+    mae = mean_absolute_error(predictions, correct_values)
+    print("REMEMBER THIS IS FOR THE TRAINING DATA THESE NUMBERS SHOULD BE REALLY GOOD BUT ARE WRONG!!!")
+    print("Testing MSE %.3f " % mse)
+    print("Testing MAE %.3f " % mae)
     
-    return model
+    test_scores = {"mean_squared_error": mse, "mean_absolute_error": mae}
+
+     
+    return model, history, test_scores
     
 def create_and_train_new_model(training_data_dir, test_data_dir, batch_size, num_epochs, model_save_dir=None, model_name="model"):
     """
@@ -217,11 +269,13 @@ def create_and_train_new_model(training_data_dir, test_data_dir, batch_size, num
     """
     model = _create_model()
 
-    trained_model = _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs)
+    trained_model, history, test_scores = _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs)
 
     if model_save_dir is not None:
         print("\nSaving model....")
         _save_model(trained_model, model_save_dir, name=model_name)
+        _save_history(model_save_dir, history)
+        _save_test_scores(model_save_dir, test_scores)
         print("Saved!\n\n")
 
 def load_and_retrain_model(model_path, training_data_dir, test_data_dir, batch_size, num_epochs, model_name="model", model_save_dir=None):
@@ -245,11 +299,13 @@ def load_and_retrain_model(model_path, training_data_dir, test_data_dir, batch_s
     
     model = _load_model(json_path, weights_path)
 
-    trained_model = _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs)
+    trained_model, history, test_scores = _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs)
     
     if model_save_dir is not None:
         print("Saving model...")
         _save_model(trained_model, model_save_dir, name=model_name)
+        _save_history(model_save_dir, history)
+        _save_test_scores(model_save_dir, test_scores)
         print("Saved!\n\n")
 
 
@@ -261,8 +317,8 @@ if __name__ == "__main__":
     parser.add_argument('--model_load_dir', default=None, help="The directory to load a model from.")
     parser.add_argument('training_data_dir', help='The directory to get training data from.')
     parser.add_argument('test_data_dir', help='The directory to get testing data from.')
-    parser.add_argument('--batch_size', default=8, help="The batch size to use when training.")
-    parser.add_argument('--num_epochs', default=100, help="The number of epochs to use when training.")
+    parser.add_argument('--batch_size', default=8, type=int, help="The batch size to use when training.")
+    parser.add_argument('--num_epochs', default=100, type=int, help="The number of epochs to use when training.")
     parser.add_argument('--model_name', default="model", help="The name of the model.")
 
     args = parser.parse_args()
