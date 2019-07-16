@@ -18,7 +18,7 @@ from keras.layers import Flatten, Dense
 from keras.preprocessing.image import ImageDataGenerator
 from keras.callbacks import Callback
 
-from keras.layers import Input, Dense, Conv2D, MaxPooling2D, UpSampling2D
+from keras.layers import Input, Dense, Conv2D, MaxPooling2D, UpSampling2D, Dropout
 from keras.models import Model, model_from_json
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 
@@ -45,6 +45,20 @@ class LossHistory(Callback):
         self.mean_squared_error.append(logs.get('mean_squared_error'))
         self.mean_absolute_error.append(logs.get('mean_absolute_error'))
 
+def r_square(y_true, y_pred):
+    """
+    Calculate the R squared value
+    
+    :param y_true: The true label
+    :param y_pred: The predicted label
+    :returns: The R Squared measure
+    """
+    
+    from keras import backend as K
+    SS_res =  K.sum(K.square(y_true - y_pred)) 
+    SS_tot = K.sum(K.square(y_true - K.mean(y_true))) 
+    return ( 1 - SS_res/(SS_tot + K.epsilon()) )
+
 def _create_model():
     """
     Create the model for count estimation
@@ -63,17 +77,21 @@ def _create_model():
     #x = MaxPooling2D((2, 2), padding='same')(x)
 
     output_vgg16 = vgg16_model(input_img)
-
+    
     x = Flatten(name='flatten')(output_vgg16)#(x)
+    x = Dense(64, kernel_initializer='normal')(x)
+    x = Dropout(0.2)(x)
     x = Dense(32, kernel_initializer='normal')(x)
-    x = Dense(20, kernel_initializer='normal', name='Pre-Predictions')(x)
+    x = Dropout(0.2)(x)
+    x = Dense(16, kernel_initializer='normal', name='Pre-Predictions')(x)
+    x = Dropout(0.2)(x)
     x = Dense(1, kernel_initializer='normal')(x)
 
 
     counter = Model(input_img, x)
 
 
-    counter.compile(optimizer='adam', loss='mean_squared_error', metrics=['mse', 'mae'])
+    counter.compile(optimizer='adam', loss='mean_squared_error', metrics=['mse', 'mae', r_square])
     counter.summary()
 
     return counter
