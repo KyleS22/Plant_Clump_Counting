@@ -20,7 +20,7 @@ from keras.callbacks import Callback
 
 from keras.layers import Input, Dense, Conv2D, MaxPooling2D, UpSampling2D, Dropout
 from keras.models import Model, model_from_json
-from sklearn.metrics import mean_squared_error, mean_absolute_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 
 import numpy as np
@@ -39,11 +39,13 @@ class LossHistory(Callback):
         self.losses = []
         self.mean_squared_error = []
         self.mean_absolute_error = []
+        self.r_square = []
 
     def on_batch_end(self, batch, logs={}):
         self.losses.append(logs.get('loss'))
         self.mean_squared_error.append(logs.get('mean_squared_error'))
         self.mean_absolute_error.append(logs.get('mean_absolute_error'))
+        self.r_square.append(logs.get('r_square'))
 
 def r_square(y_true, y_pred):
     """
@@ -57,7 +59,7 @@ def r_square(y_true, y_pred):
     from keras import backend as K
     SS_res =  K.sum(K.square(y_true - y_pred)) 
     SS_tot = K.sum(K.square(y_true - K.mean(y_true))) 
-    return ( 1 - SS_res/(SS_tot + K.epsilon()) )
+    return 1 - (SS_res/(SS_tot + K.epsilon()))
 
 def _create_model():
     """
@@ -69,22 +71,23 @@ def _create_model():
         
     input_img = Input(shape=(224, 224, 3))  # adapt this if using `channels_first` image data format
 
-    #x = Conv2D(16, (3, 3), activation='relu', padding='same')(input_img)
-    #x = MaxPooling2D((2, 2), padding='same')(x)
-    #x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
-    #x = MaxPooling2D((2, 2), padding='same')(x)
-    #x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
-    #x = MaxPooling2D((2, 2), padding='same')(x)
+    x = Conv2D(16, (3, 3), activation='relu', padding='same')(input_img)
+    x = MaxPooling2D((2, 2), padding='same')(x)
+    x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+    x = MaxPooling2D((2, 2), padding='same')(x)
+    x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+    x = MaxPooling2D((2, 2), padding='same')(x)
 
-    output_vgg16 = vgg16_model(input_img)
+    #output_vgg16 = vgg16_model(input_img)
     
-    x = Flatten(name='flatten')(output_vgg16)#(x)
+    x = Flatten(name='flatten')(x)#)(output_vgg16)#(x)
     x = Dense(64, kernel_initializer='normal')(x)
     x = Dropout(0.2)(x)
     x = Dense(32, kernel_initializer='normal')(x)
     x = Dropout(0.2)(x)
     x = Dense(16, kernel_initializer='normal', name='Pre-Predictions')(x)
     x = Dropout(0.2)(x)
+    x = Dense(8, kernel_initializer='normal')(x)
     x = Dense(1, kernel_initializer='normal')(x)
 
 
@@ -162,6 +165,7 @@ def _load_model(json_path, weights_path):
     :param weights_path: The path to the weights file
     :returns: The loaded model
     """
+   
     try:
         json_file = open(json_path, 'r')
     except:
@@ -175,7 +179,7 @@ def _load_model(json_path, weights_path):
 
     loaded_model.load_weights(weights_path)
     
-    loaded_model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mse', 'mae'])
+    loaded_model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mse', 'mae', r_square])
     loaded_model.summary()
 
     return loaded_model
@@ -235,14 +239,15 @@ def _save_history(out_path, history):
     
     
     with open(os.path.join(out_path, 'loss_history.csv'), 'w') as csvfile:
-        fieldnames = ['loss', 'mean_squared_error', 'mean_absolute_error']
+        fieldnames = ['loss', 'mean_squared_error', 'mean_absolute_error', 'r_square']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         writer.writeheader()
         
-        for loss, mse, mae in zip(history.losses, history.mean_squared_error, history.mean_absolute_error):
+        for loss, mse, mae, r_square in zip(history.losses, history.mean_squared_error, history.mean_absolute_error,
+            history.r_square):
 
-            writer.writerow({"loss": loss, "mean_squared_error": mse, "mean_absolute_error": mae})
+            writer.writerow({"loss": loss, "mean_squared_error": mse, "mean_absolute_error": mae, "r_square": r_square})
 
 def _save_test_scores(out_path, test_scores):
     """
