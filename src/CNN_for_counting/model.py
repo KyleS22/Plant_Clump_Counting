@@ -71,16 +71,17 @@ def _create_model():
         
     input_img = Input(shape=(224, 224, 3))  # adapt this if using `channels_first` image data format
 
-    x = Conv2D(16, (3, 3), activation='relu', padding='same')(input_img)
-    x = MaxPooling2D((2, 2), padding='same')(x)
-    x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
-    x = MaxPooling2D((2, 2), padding='same')(x)
-    x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
-    x = MaxPooling2D((2, 2), padding='same')(x)
+    #x = Conv2D(16, (3, 3), activation='relu', padding='same')(input_img)
+    #x = MaxPooling2D((2, 2), padding='same')(x)
+    #x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+    #x = MaxPooling2D((2, 2), padding='same')(x)
+    #x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+    #x = MaxPooling2D((2, 2), padding='same')(x)
 
-    #output_vgg16 = vgg16_model(input_img)
-    
-    x = Flatten(name='flatten')(x)#)(output_vgg16)#(x)
+    output_vgg16 = vgg16_model(input_img)
+    vgg16_model.summary()
+        
+    x = Flatten(name='flatten')(output_vgg16)#(x)
     x = Dense(64, kernel_initializer='normal')(x)
     x = Dropout(0.2)(x)
     x = Dense(32, kernel_initializer='normal')(x)
