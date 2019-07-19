@@ -313,7 +313,7 @@ def _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs
 
     tensorboard = TensorBoard(log_dir="logs/{}".format(time()))
     
-    es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=100, min_delta=1)
+    es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=100, min_delta=0.5)
     
     if model_checkpoint is not None: 
         model.fit_generator(reg_train_generator, steps_per_epoch=train_generator.samples // batch_size,
@@ -409,11 +409,15 @@ def load_and_retrain_model(model_path, training_data_dir, test_data_dir, batch_s
 
     if not os.path.exists(model_path):
         raise OSError("The given model path does not exist: %s" % model_path)
-
-    json_path = os.path.join(model_path, model_name + ".json")
-    weights_path = os.path.join(model_path, model_name + ".h5")
     
-    model = _load_model_json(json_path, weights_path)
+    if os.path.exists(os.path.join(model_path, model_name + "_best_model.h5")):
+        model = load_model(os.path.join(model_path, model_name + "_best_model.h5"), custom_objects={'r_square': r_square})
+
+    else:
+        json_path = os.path.join(model_path, model_name + ".json")
+        weights_path = os.path.join(model_path, model_name + ".h5")
+    
+        model = _load_model_json(json_path, weights_path)
 
     model_checkpoint = None
 
