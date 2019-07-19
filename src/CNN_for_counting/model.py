@@ -35,8 +35,6 @@ import json
 sys.path.append("../data_management")
 
 from keras import backend as K
-print(K.tensorflow_backend._get_available_gpus())
-
 
 class LossHistory(Callback):
     def on_train_begin(self, logs={}):
