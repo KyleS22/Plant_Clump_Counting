@@ -16,12 +16,12 @@ from keras.applications.vgg16 import VGG16
 from keras.layers import Flatten, Dense
 #from keras.models import Model
 from keras.preprocessing.image import ImageDataGenerator
-from keras.callbacks import Callback
+from keras.callbacks import Callback, EarlyStopping, ModelCheckpoint
 
 from keras.layers import Input, Dense, Conv2D, MaxPooling2D, UpSampling2D, Dropout
-from keras.models import Model, model_from_json
+from keras.models import Model, model_from_json, load_model
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-
+from keras import regularizers
 
 import numpy as np
 import os
@@ -31,6 +31,11 @@ import csv
 import sys
 from datetime import datetime
 import json
+from tqdm import tqdm
+
+from time import time
+from keras.callbacks import TensorBoard
+from keras import losses
 
 sys.path.append("../data_management")
 
@@ -59,8 +64,13 @@ def r_square(y_true, y_pred):
     """
     
     from keras import backend as K
+    
+
     SS_res =  K.sum(K.square(y_true - y_pred)) 
+    
     SS_tot = K.sum(K.square(y_true - K.mean(y_true))) 
+    
+
     return 1 - (SS_res/(SS_tot + K.epsilon()))
 
 def _create_model():
@@ -84,14 +94,15 @@ def _create_model():
     vgg16_model.summary()
         
     x = Flatten(name='flatten')(output_vgg16)#(x)
-    x = Dense(64, kernel_initializer='normal')(x)
-    x = Dropout(0.2)(x)
-    x = Dense(32, kernel_initializer='normal')(x)
-    x = Dropout(0.2)(x)
-    x = Dense(16, kernel_initializer='normal', name='Pre-Predictions')(x)
-    x = Dropout(0.2)(x)
-    x = Dense(8, kernel_initializer='normal')(x)
-    x = Dense(1, kernel_initializer='normal')(x)
+    x = Dense(64, kernel_initializer='normal', kernel_regularizer=regularizers.l2(0.01))(x)
+    x = Dropout(0.4)(x)
+    x = Dense(32, kernel_initializer='normal', kernel_regularizer=regularizers.l2(0.01))(x)
+    x = Dropout(0.4)(x)
+    x = Dense(16, kernel_initializer='normal', kernel_regularizer=regularizers.l2(0.01))(x)
+    x = Dropout(0.4)(x)
+    x = Dense(8, kernel_initializer='normal', kernel_regularizer=regularizers.l2(0.01))(x)
+    x = Dropout(0.3)(x)
+    x = Dense(1, kernel_initializer='normal', kernel_regularizer=regularizers.l2(0.01), name='Count')(x)
 
 
     counter = Model(input_img, x)
@@ -102,6 +113,11 @@ def _create_model():
 
     return counter
 
+
+def _make_model_out_dir(out_dir):
+
+    if not os.path.exists(out_dir):
+        os.mkdir(out_dir)
 
 def _save_model(model, out_dir,  name="model"):
     """
@@ -114,7 +130,7 @@ def _save_model(model, out_dir,  name="model"):
     """
 
 
-    os.mkdir(out_dir)
+    _make_model_out_dir(out_dir)
     
 
     model_json = model.to_json()
@@ -160,7 +176,7 @@ def _save_config_json(out_dir, args, start_time=None):
 
 
    
-def _load_model(json_path, weights_path):
+def _load_model_json(json_path, weights_path):
     """
     Load a model from a json, and its weights from an h5 file
     
@@ -252,7 +268,7 @@ def _save_history(out_path, history):
 
             writer.writerow({"loss": loss, "mean_squared_error": mse, "mean_absolute_error": mae, "r_square": r_square})
 
-def _save_test_scores(out_path, test_scores):
+def _save_test_scores(out_path, test_scores, file_name=None):
     """
     Save the given test scores to a csv file
     
@@ -260,8 +276,11 @@ def _save_test_scores(out_path, test_scores):
     :param test_scores: A dictionary containing the test scores to save
     :returns: None
     """
+
+    if file_name is None:
+        file_name = 'test_scores.csv'
     
-    with open(os.path.join(out_path, 'test_scores.csv'), 'w') as csvfile:
+    with open(os.path.join(out_path, file_name), 'w') as csvfile:
         fieldnames = test_scores.keys()
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
@@ -269,7 +288,7 @@ def _save_test_scores(out_path, test_scores):
         
         writer.writerow(test_scores)
 
-def _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs):
+def _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs, model_checkpoint=None):
     """
     Train the given model.
     
@@ -278,6 +297,7 @@ def _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs
     :param test_data_dir: The path to the testing data
     :param batch_size: The batch size to use when training
     :param num_epochs: The number of epochs to use when training
+    :param model_checkpoint: Optional checkpoing callback for the model
     :returns: The trained model, its training history, and a dictionary contaning test scores
     """
     train_generator, validation_generator = _create_train_and_validation_generators(training_data_dir, batch_size)
@@ -291,28 +311,55 @@ def _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs
    
     history = LossHistory()
 
-    model.fit_generator(reg_train_generator, steps_per_epoch=train_generator.samples // batch_size,
-    validation_data=reg_validation_generator, validation_steps = validation_generator.samples // batch_size, epochs =
-    num_epochs, callbacks=[history])
+    tensorboard = TensorBoard(log_dir="logs/{}".format(time()))
     
+    es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=100, min_delta=1)
+    
+    if model_checkpoint is not None: 
+        model.fit_generator(reg_train_generator, steps_per_epoch=train_generator.samples // batch_size,
+        validation_data=reg_validation_generator, validation_steps = validation_generator.samples // batch_size, epochs =
+        num_epochs, callbacks=[history, tensorboard, es, model_checkpoint])
+    else:
+        model.fit_generator(reg_train_generator, steps_per_epoch=train_generator.samples // batch_size,
+        validation_data=reg_validation_generator, validation_steps = validation_generator.samples // batch_size, epochs =
+        num_epochs, callbacks=[history, tensorboard, es])
+
+    test_scores = _evaluate_model(model, test_data_dir)
+                    
+    return model, history, test_scores
+
+def _evaluate_model(model, test_data_dir):
+
     test_labels = os.listdir(test_data_dir)
     test_labels = [int(x) for x in test_labels]
-
+    
     test_generator = _create_test_generator(test_data_dir)
     reg_test_generator = _regression_flow_from_directory(test_generator, test_labels)
-
-
+    
     results = model.evaluate_generator(reg_test_generator, steps=test_generator.samples // test_generator.batch_size)
     
-    print("TEST RESULTS")
     test_scores = {}
-    for name, score in zip(model.metrics_names, results):
-        test_scores[name] = score
-        
-        print("{}: {}".format(name, score))
-         
-    return model, history, test_scores
+
+    print("==============================")
+    print("TEST RESULTS")
     
+    for name, score in zip(model.metrics_names, results):
+        test_scores[name] = score 
+
+        print("{}: {}".format(name, score))
+
+    return test_scores
+ 
+def _evaluate_best_model(model_name, model_save_dir, test_data_dir):
+    
+    model_path = os.path.join(model_save_dir, model_name + "_best_model.h5")
+
+    model = load_model(model_path, custom_objects={'r_square': r_square})
+
+    test_scores = _evaluate_model(model, test_data_dir)
+
+    _save_test_scores(model_save_dir, test_scores, file_name="best_" + model_name + "_test_scores.csv")
+
 def create_and_train_new_model(training_data_dir, test_data_dir, batch_size, num_epochs, model_save_dir=None, model_name="model"):
     """
     Create a new model and train it with the given data.  The model will be saved as a JSON and the weights will be
@@ -327,14 +374,24 @@ def create_and_train_new_model(training_data_dir, test_data_dir, batch_size, num
     :returns: None
     """
     model = _create_model()
+    
+    model_checkpoint = None
 
-    trained_model, history, test_scores = _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs)
+    if model_save_dir is not None:
+        
+        _make_model_out_dir(model_save_dir)
+        model_checkpoint = ModelCheckpoint(os.path.join(model_save_dir, model_name + '_best_model.h5'), monitor='val_mean_squared_error', mode='min', verbose=1, save_best_only=True)
+    
+
+    trained_model, history, test_scores = _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs,
+        model_checkpoint=model_checkpoint)
 
     if model_save_dir is not None:
         print("\nSaving model....")
         _save_model(trained_model, model_save_dir, name=model_name)
         _save_history(model_save_dir, history)
         _save_test_scores(model_save_dir, test_scores)
+        _evaluate_best_model(model_name, model_save_dir, test_data_dir)
         print("Saved!\n\n")
 
 def load_and_retrain_model(model_path, training_data_dir, test_data_dir, batch_size, num_epochs, model_name="model", model_save_dir=None):
@@ -356,15 +413,23 @@ def load_and_retrain_model(model_path, training_data_dir, test_data_dir, batch_s
     json_path = os.path.join(model_path, model_name + ".json")
     weights_path = os.path.join(model_path, model_name + ".h5")
     
-    model = _load_model(json_path, weights_path)
+    model = _load_model_json(json_path, weights_path)
 
-    trained_model, history, test_scores = _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs)
+    model_checkpoint = None
+
+    if model_save_dir is not None:
+        _make_model_out_dir(model_save_dir)
+        model_checkpoint = ModelCheckpoint(os.path.join(model_save_dir, model_name + '_best_model.h5'), monitor='val_mean_squared_error', mode='min', verbose=1, save_best_only=True)
+    
+    trained_model, history, test_scores = _train_model(model, training_data_dir, test_data_dir, batch_size, num_epochs,
+        model_checkpoint=model_checkpoint)
     
     if model_save_dir is not None:
         print("Saving model...")
         _save_model(trained_model, model_save_dir, name=model_name)
         _save_history(model_save_dir, history)
         _save_test_scores(model_save_dir, test_scores)
+        _evaluate_best_model(model_name, model_save_dir, test_data_dir)
         print("Saved!\n\n")
 
 
