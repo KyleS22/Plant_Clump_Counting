@@ -46,11 +46,14 @@ def run_system_test(real_counts_csv, path_to_clump_images, path_to_model, out_pa
     
     model = utils.load_model(path_to_model, model_type)
 
-    y_true, y_pred = _evaluate_model(model, real_counts, sorted_images)
+    y_true, y_pred = _evaluate_model(model, real_counts, sorted_clumps)
+
+    print(y_true)
+    print(y_pred)
 
     test_scores = utils.create_test_scores_dict(y_true, y_pred)
 
-    utils.save_test_results(test_scores, out_path, save_file_name=save_file_name)
+    utils.save_test_results(test_scores, out_path, file_name=save_file_name)
 
 def _read_real_counts_csv(path_to_csv):
     """
@@ -91,8 +94,7 @@ def _load_and_sort_clump_images(path_to_clump_images):
         image_split = image.rsplit('_', 1)
         filename = image_split[0]
         
-
-        if sorted_images[filename] is None:
+        if not filename in sorted_images.keys():
             sorted_images[filename] = []
         
         sorted_images[filename].append(os.path.join(path_to_clump_images, image))
@@ -127,8 +129,11 @@ def _evaluate_model(model, real_counts, sorted_images):
             prediction = model.predict(images) 
 
             row_counts += prediction
-       
-        true_count = real_counts.loc[real_counts[0] == row]
+      
+        try:
+            true_count = real_counts.loc[real_counts[0] == row].values[0][1]
+        except:
+            continue
         
         true_counts.append(true_count)
         predicted_counts.append(row_counts)

@@ -21,9 +21,9 @@ def accuracy(y_true, y_pred):
     :returns: The accuracy of the model
     """
 
-    predicted_vals = np.rint(predicted_vals)
+    predicted_vals = np.rint(y_pred)
 
-    correct = (predicted_vals == true_vals)
+    correct = (predicted_vals == y_true)
 
     return correct.sum() / correct.size
 
@@ -36,7 +36,7 @@ def mean_squared_error(y_true, y_pred):
     :returns: The MSE of the model
     """
 
-    return (np.square(y_true - y_pred)).mean(axis=ax)
+    return (np.square(np.array(y_true) - np.array(y_pred))).mean(axis=0)
 
 def mean_absolute_error(y_true, y_pred):
     """
@@ -47,7 +47,7 @@ def mean_absolute_error(y_true, y_pred):
     :returns: The Mean Absolute Error of the model
     """
 
-    return np.sum(np.absolute(y_true - y_pred))
+    return np.sum(np.absolute(np.array(y_true) - np.array(y_pred)))
     
 
 def r_square(y_true, y_pred):

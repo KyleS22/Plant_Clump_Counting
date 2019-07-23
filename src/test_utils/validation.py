@@ -24,20 +24,20 @@ import test_utils.metrics as metrics
 import test_utils.utils as utils
 
 
-def run_validation(validataion_data_dir, path_to_model, out_path, save_file_name="validataion_test.csv", model_type="CNN"):
+def run_validation(validation_data_dir, path_to_model, out_path, save_file_name="validataion_test.csv", model_type="CNN"):
     
     if not os.path.exists(out_path):
         os.mkdir(out_path)
 
     image_paths, true_labels = _get_validation_data(validation_data_dir)
 
-    model = utils.load_model(path_to_model)
+    model = utils.load_model(path_to_model, model_type)
 
     y_true, y_pred = _validate(model, image_paths, true_labels)
 
     test_scores = utils.create_test_scores_dict(y_true, y_pred)
 
-    utils.save_test_results(test_scores, out_path, save_file_name=save_file_name)
+    utils.save_test_results(test_scores, out_path, file_name=save_file_name)
 
 def _validate(model, image_paths, true_labels):
     """
@@ -84,6 +84,6 @@ def _get_validation_data(validation_dir):
             image_paths.append(os.path.join(validation_dir, label, image))
             true_labels.append(int(label))
 
-    return image_paths, trie_labels
+    return image_paths, true_labels
             
     

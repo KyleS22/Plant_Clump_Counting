@@ -12,6 +12,7 @@ Description: Script to train the CNN
 import argparse
 import os
 import json
+import sys
 
 from datetime import datetime
 

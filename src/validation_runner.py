@@ -39,7 +39,7 @@ if __name__ == "__main__":
             args.test_result_path, save_file_name=args.test_name, model_type=args.model_type)
     else:
 
-        validation.run_validation(args.validataion_data_dir, args.model_path, args.test_result_path,
+        validation.run_validation(args.validation_data_dir, args.model_path, args.test_result_path,
             save_file_name=args.test_name, model_type=args.model_type)
 
     print("Done!")

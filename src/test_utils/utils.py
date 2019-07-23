@@ -9,6 +9,12 @@ Description: A module containing useful functions for evaluating models
 
 """
 
+import os
+import csv
+
+from counting_CNN.model import CountingModel as CCNN
+from test_utils import metrics
+
 def load_model(path_to_model, model_type):
     """
     Load the given model for testing.
@@ -44,12 +50,12 @@ def save_test_results(test_results, out_path, file_name="system_test_scores.csv"
     
 
     with open(os.path.join(out_path, file_name), 'w') as csvfile:
-        fieldnames = test_scores.keys()
+        fieldnames = test_results.keys()
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         writer.writeheader()
         
-        writer.writerow(test_scores)
+        writer.writerow(test_results)
 
 def create_test_scores_dict(y_true, y_pred):
     """
@@ -59,7 +65,7 @@ def create_test_scores_dict(y_true, y_pred):
     :param y_pred: The predicted counts
     :returns: A dictionary containing an entry for each metric
     """
-    
+   
     test_scores = {}
 
     test_scores["accuracy"] = metrics.accuracy(y_true, y_pred)

@@ -14,6 +14,7 @@ from keras.preprocessing.image import img_to_array
 from keras.applications.vgg16 import preprocess_input
 from keras.applications.vgg16 import VGG16
 from keras.layers import Flatten, Dense
+from keras.preprocessing import image as keras_image
 
 from keras.preprocessing.image import ImageDataGenerator
 from keras.callbacks import Callback, EarlyStopping, ModelCheckpoint
@@ -79,7 +80,7 @@ class LossHistory(Callback):
     
 class CountingModel: 
 
-    def __init__(self, save_dir, use_checkpoint=True, name="model"):
+    def __init__(self, save_dir="./TEMP_MODEL_OUT", use_checkpoint=True, name="model"):
         self.model = None
         self.name = name
         self.save_dir = save_dir
@@ -114,10 +115,15 @@ class CountingModel:
         
         input_img = Input(shape=(224, 224, 3))  # adapt this if using `channels_first` image data format
 
-        output_vgg16 = vgg16_model(input_img)
-        vgg16_model.summary()
-        
-        x = Flatten(name='flatten')(output_vgg16)#(x)
+        #output_vgg16 = vgg16_model(input_img)
+        #vgg16_model.summary()
+        x = Conv2D(16, (3, 3), activation='relu', padding='same')(input_img)
+        x = MaxPooling2D((2, 2), padding='same')(x)
+        x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+        x = MaxPooling2D((2, 2), padding='same')(x)
+        x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+        x = MaxPooling2D((2, 2), padding='same')(x)        
+        x = Flatten(name='flatten')(x)#(output_vgg16)#(x)
         #x = Dense(16, kernel_initializer='normal', kernel_regularizer=regularizers.l2(0.01), bias_regularizer=regularizers.l2(0.1))(x)
         #x = Dropout(0.4)(x)
         x = Dense(8, kernel_initializer='normal', kernel_regularizer=regularizers.l2(0.01),
@@ -136,7 +142,7 @@ class CountingModel:
         
         self.model.summary()
     
-    def prepare_input_from_file(file_path):
+    def prepare_input_from_file(self, file_path):
         """
         Loads and processes the given file for input to the model
         
@@ -172,7 +178,8 @@ class CountingModel:
         :param model_dir: The directory to load the model from
         :returns: None.  The loaded model will be initialized in self.model
         """
-        model = load_model(model_dir)
+        model = load_model(model_dir, custom_objects={"r_square": self._get_r_square_func(), "count_accuracy":
+            self._get_count_accuracy_func()})
 
         self.model = model
        
@@ -229,7 +236,7 @@ class CountingModel:
         :returns: The predicted count for the image
         """
 
-        return self.model.predict(img)
+        return self.model.predict(img)[0][0]
 
     def evaluate(test_data_dir):
         """
