@@ -1,1 +1,0 @@
-{"model_load_dir": null, "training_data_dir": "/home/kyle/Plant_Counting_Data/synthetic_train/", "start_time": "2019_07_16_12_51_02", "model_save_dir": "./Synthetic_Encoder", "batch_size": 32, "end_time": "2019_07_16_16_46_15", "test_data_dir": "/home/kyle/Plant_Counting_Data/synthetic_test/", "num_epochs": 100, "model_name": "SyntheticEncoder"}
