@@ -24,16 +24,23 @@ import test_utils.metrics as metrics
 import test_utils.utils as utils
 
 
-def run_validation(validation_data_dir, path_to_model, out_path, save_file_name="validataion_test.csv", model_type="CNN"):
+def run_validation(validation_data_dir, path_to_model, out_path, save_file_name="validataion_test.csv",
+        model_type="CNN", path_to_weights=None):
     
     if not os.path.exists(out_path):
         os.mkdir(out_path)
 
-    image_paths, true_labels = _get_validation_data(validation_data_dir)
+    image_paths, y_true = _get_validation_data(validation_data_dir)
 
-    model = utils.load_model(path_to_model, model_type)
 
-    y_true, y_pred = _validate(model, image_paths, true_labels)
+    model = utils.load_model(path_to_model, model_type, path_to_weights)
+    
+    predictions = model.predict_generator(validation_data_dir, len(image_paths))
+
+    y_pred = [x[0] for x in predictions]
+   
+
+    #y_true, y_pred = _validate(model, image_paths, true_labels)
 
     test_scores = utils.create_test_scores_dict(y_true, y_pred)
 
@@ -52,14 +59,25 @@ def _validate(model, image_paths, true_labels):
     y_true = []
     y_pred = []
 
+    images = []
+
     for image, label in zip(image_paths, true_labels):
 
         img = model.prepare_input_from_file(image)
+        
+
+        images.append(img)
 
         prediction = model.predict(img)
 
         y_true.append(label)
         y_pred.append(prediction)
+
+
+    for x, y in zip(y_true, y_pred):
+        print(x, y)
+    
+
 
     return y_true, y_pred
     

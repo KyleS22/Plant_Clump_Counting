@@ -38,6 +38,7 @@ from time import time
 from keras.callbacks import TensorBoard
 from keras import losses
 
+import matplotlib.pyplot as plt
 
 from keras import backend as K
 
@@ -85,6 +86,8 @@ class CountingModel:
         self.name = name
         self.save_dir = save_dir
         self.checkpointer = None
+        
+        self._set_up_architecture()
 
         if use_checkpoint:
             self._init_model_checkpointer(save_dir)
@@ -104,9 +107,17 @@ class CountingModel:
 
         self.checkpointer = ModelCheckpoint(save_name, monitor='val_mean_squared_error', mode='min', verbose=1,
                 save_best_only=True)
-        
-        
     def compile(self):
+    
+        metrics = ['mse', 'mae', self._get_r_square_func(), self._get_count_accuracy_func()]
+
+        
+        self.model.compile(optimizer='adam', loss='mean_squared_error', metrics=metrics)
+        
+        self.model.summary()
+
+        
+    def _set_up_architecture(self):
         """
         Compile the model architecture
         
@@ -116,11 +127,17 @@ class CountingModel:
         
         input_img = Input(shape=(224, 224, 3))  # adapt this if using `channels_first` image data format
 
-        output_vgg16 = vgg16_model(input_img)
-        vgg16_model.summary()
-        x = Flatten(name='flatten')(output_vgg16)#(x)
-        #x = Dense(16, kernel_initializer='normal', kernel_regularizer=regularizers.l2(0.01), bias_regularizer=regularizers.l2(0.1))(x)
-        #x = Dropout(0.4)(x)
+        #output_vgg16 = vgg16_model(input_img)
+        #vgg16_model.summary()
+
+        x = Conv2D(16, (3, 3), activation='relu', padding='same')(input_img)
+        x = MaxPooling2D((2, 2), padding='same')(x)
+        x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+        x = MaxPooling2D((2, 2), padding='same')(x)
+        x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+        x= MaxPooling2D((2, 2), padding='same')(x)
+        
+        x = Flatten(name='flatten')(x)#(output_vgg16)#(x)
         x = Dense(8, kernel_initializer='normal', kernel_regularizer=regularizers.l2(0.01),
             bias_regularizer=regularizers.l2(0.1))(x)
         x = Dropout(0.3)(x)
@@ -130,13 +147,7 @@ class CountingModel:
 
         self.model = Model(input_img, x)
 
-        metrics = ['mse', 'mae', self._get_r_square_func(), self._get_count_accuracy_func()]
-
-        
-        self.model.compile(optimizer='adam', loss='mean_squared_error', metrics=metrics)
-        
-        self.model.summary()
-    
+            
     def prepare_input_from_file(self, file_path):
         """
         Loads and processes the given file for input to the model
@@ -146,11 +157,25 @@ class CountingModel:
         """
         img = keras_image.load_img(file_path, target_size=(224, 224))
         x = keras_image.img_to_array(img)
+        #x = x.reshape(1, 224, 224, 3)
         x = np.expand_dims(x, axis=0)
+
+        #x = np.expand_dims(x, axis=0)
             
         images = np.vstack([x])
         
         return images
+
+    def _save_model_json(self):
+
+        self._make_model_out_dir()
+
+        model_json = self.model.to_json()
+
+        out_name = os.path.join(self.save_dir, self.name + ".json")
+
+        with open(out_name, 'w') as json_file:
+            json_file.write(model_json)
 
     def _save_model(self):
         """
@@ -166,18 +191,27 @@ class CountingModel:
         
         self.model.save(out_name)
         
-    def load_model_file(self, model_dir):
+    def load_model_file(self, model_json_path, model_weights_path):
         """
         Load the model from the given directory
         
         :param model_dir: The directory to load the model from
         :returns: None.  The loaded model will be initialized in self.model
         """
-        model = load_model(model_dir, custom_objects={"r_square": self._get_r_square_func(), "count_accuracy":
-            self._get_count_accuracy_func()})
-
+        
+        json_file = open(model_json_path, 'r')
+        loaded_model_json = json_file.read()
+        json_file.close()
+        
+        model = model_from_json(loaded_model_json)
+       # model.load_weights(model_weights_path)
+        #model = load_model(model_dir, custom_objects={"r_square": self._get_r_square_func(), "count_accuracy":
+        #    self._get_count_accuracy_func()})
+    
         self.model = model
-       
+        #self.compile()
+        model.load_weights(model_weights_path)
+               
     def train(self, training_data_dir, batch_size, num_epochs, validation_data_dir=None):
         """
         Train the given model.
@@ -210,16 +244,22 @@ class CountingModel:
         
         es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=100, min_delta=0.5)
         
+            
         if self.checkpointer is not None:
             self.model.fit_generator(reg_train_generator, steps_per_epoch=train_generator.samples // batch_size,
             validation_data=reg_validation_generator, validation_steps = validation_generator.samples // batch_size, epochs =
             num_epochs, callbacks=[history, tensorboard, es, self.checkpointer], verbose=1)
+            
+            validation_generator = self._create_generator(validation_data_dir, batch_size)
+            reg_validation_generator = self._regression_flow_from_directory(validation_generator, list_of_values)
+
         else:
             self.model.fit_generator(reg_train_generator, steps_per_epoch=train_generator.samples // batch_size,
             validation_data=reg_validation_generator, validation_steps = validation_generator.samples // batch_size, epochs =
             num_epochs, callbacks=[history, tensorboard, es], verbose=1)
             self._save_model()
-                        
+                      
+        self._save_model_json()  
         return history
 
 
@@ -230,10 +270,30 @@ class CountingModel:
         :img: An image to predict
         :returns: The predicted count for the image
         """
-
         return self.model.predict(img)[0][0]
 
-    def evaluate(test_data_dir):
+    def predict_generator(self, data_dir, num_samples):
+        """
+        Predict the counts for all images in the given directory
+        
+        :param data_dir: The path to the image directory
+        :param num_samples: The number of samples in the directory
+        :returns: A list of the predictions for the sample images in the directory
+        """
+        
+
+        val_gen = self._create_test_generator(data_dir)
+        
+        label_map = val_gen.class_indices.keys()
+       
+        list_of_values = [int(x) for x in label_map]
+    
+        regression_gen = self._regression_flow_from_directory(val_gen, list_of_values)
+        
+        return self.model.predict_generator(regression_gen, steps=num_samples/8)
+
+
+    def evaluate(self, test_data_dir):
         """
         Evaluate the model on the testing data
         
@@ -245,6 +305,7 @@ class CountingModel:
         test_labels = os.listdir(test_data_dir)
         test_labels = [int(x) for x in test_labels]
         
+         
         test_generator = self._create_test_generator(test_data_dir)
         reg_test_generator = self._regression_flow_from_directory(test_generator, test_labels)
         
@@ -301,7 +362,7 @@ class CountingModel:
         return data_generator
         
 
-    def _create_test_generator(test_data_dir, batch_size=8, target_size=(224, 224)):
+    def _create_test_generator(self, test_data_dir, batch_size=8, target_size=(224, 224)):
         """
         Create an image generator for the testing set
         

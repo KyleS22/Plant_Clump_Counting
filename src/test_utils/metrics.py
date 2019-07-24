@@ -10,6 +10,8 @@ Description: A module containing the metrics we will use to evaluate counting mo
 """
 import numpy as np
 from sklearn.metrics import r2_score
+from sklearn.metrics import mean_squared_error as mse
+from sklearn.metrics import mean_absolute_error as mae
 
 
 def accuracy(y_true, y_pred):
@@ -20,6 +22,7 @@ def accuracy(y_true, y_pred):
     :param y_pred: The predicted counts
     :returns: The accuracy of the model
     """
+    
 
     predicted_vals = np.rint(y_pred)
 
@@ -36,7 +39,7 @@ def mean_squared_error(y_true, y_pred):
     :returns: The MSE of the model
     """
 
-    return (np.square(np.array(y_true) - np.array(y_pred))).mean(axis=0)
+    return mse(y_true, y_pred)#(np.square(np.array(y_true) - np.array(y_pred))).mean(axis=-1)
 
 def mean_absolute_error(y_true, y_pred):
     """
@@ -47,7 +50,7 @@ def mean_absolute_error(y_true, y_pred):
     :returns: The Mean Absolute Error of the model
     """
 
-    return np.sum(np.absolute(np.array(y_true) - np.array(y_pred)))
+    return mae(y_true, y_pred)#np.sum(np.absolute(np.array(y_true) - np.array(y_pred)))
     
 
 def r_square(y_true, y_pred):

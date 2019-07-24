@@ -15,7 +15,7 @@ import csv
 from counting_CNN.model import CountingModel as CCNN
 from test_utils import metrics
 
-def load_model(path_to_model, model_type):
+def load_model(path_to_model, model_type, path_to_weights=None):
     """
     Load the given model for testing.
     
@@ -27,7 +27,7 @@ def load_model(path_to_model, model_type):
 
     if model_type.upper() == "CNN":
         model = CCNN()
-        model.load_model_file(path_to_model)
+        model.load_model_file(path_to_model, path_to_weights)
     
     #TODO: Add else branch to load different types of models
        

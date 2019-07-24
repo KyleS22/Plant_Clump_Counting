@@ -22,11 +22,11 @@ if __name__ == "__main__":
     parser.add_argument('validation_data_dir', help='The directory to get validation data from.')
     parser.add_argument('test_result_path', help="The directory to store test results in.")
     parser.add_argument('test_name', help="The name for the output test files.")
-
+    
     parser.add_argument('model_type', help="The type of the model being used")
     parser.add_argument('--sys_test', action='store_true')
     parser.add_argument('--real_counts_path', default=None, help="The path to the real_counts csv.")    
-    
+    parser.add_argument('--path_to_weights', default=None, help="The path to the saved weights for a CNN")
 
     args = parser.parse_args()
     
@@ -40,6 +40,6 @@ if __name__ == "__main__":
     else:
 
         validation.run_validation(args.validation_data_dir, args.model_path, args.test_result_path,
-            save_file_name=args.test_name, model_type=args.model_type)
+            save_file_name=args.test_name, model_type=args.model_type, path_to_weights=args.path_to_weights)
 
     print("Done!")
