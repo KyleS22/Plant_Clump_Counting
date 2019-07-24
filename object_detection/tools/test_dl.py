@@ -1,6 +1,6 @@
 '''
 MODIFIED FROM CODE WRITTEN BY RIEL CASTRO-ZUNTI
-FOR THE STRAWBERRY DETEFCTION PROJECT FOR CMPY 819
+FOR THE STRAWBERRY DETECTION PROJECT FOR CMPT 819
 '''
 
 # ***** IMPORTS START HERE ***** #
@@ -28,7 +28,7 @@ from utils import visualization_utils as vis_util
 
 # ***** METHODS START HERE ***** #
 
-def get_boxes_from_DL(boxes, classes, scores, category_index, min_score_thresh=0.5):
+def get_boxes_from_TF(boxes, classes, scores, category_index, min_score_thresh=0.5):
     '''
     Args:
         boxes: a numpy array of shape [N, 4]
@@ -208,6 +208,25 @@ def getMaxIDfromPbtxt(pbtxtfilename):
                 listOfIDs.extend([int(s) for s in line.split() if s.isdigit()])
     return max(listOfIDs)
 
+def normalize(image):
+    return image/255.
+
+def compute_mask_jaccard(a, b):
+    intersection = np.logical_and(a, b)
+    union = np.logical_or(a, b)
+    return np.sum(intersection) / np.sum(union)
+
+def compute_mask_dice(a, b):
+    intersection = np.logical_and(a, b)
+    return 2 * np.sum(intersection) / (np.sum(a) + np.sum(b))
+
+def gen_mask(boxes, net_w, net_h, net_c=1):
+    toReturn = np.zeros((net_h, net_w, net_c)).astype('bool')
+    if boxes is None:
+        return toReturn
+    for i in range(len(boxes)):
+        toReturn[boxes[i]['ymin']:boxes[i]['ymax']+1, boxes[i]['xmin']:boxes[i]['xmax']+1, :] = True
+    return toReturn
 
 # ***** MAIN STARTS HERE ***** #
 
@@ -290,7 +309,7 @@ globalStatsCSVFilename = globalStatsFilename + '.csv'
 globalStatsTXTFilename = globalStatsFilename + '.txt'
 if args.save_aggregate_statistics:
     with open(os.path.join(outfolder, globalStatsCSVFilename), 'w+') as f:
-        f.write("image,time0,time1,time2,time3,numboxesfound,numboxesGT,avIoUtotal,avIoUrec,RR,DR,UR,MR,precision,recall,fscore\n")
+        f.write("image,time0,time1,time2,time3,numboxesfound,numboxesGT,avIoUtotal,avIoUrec,RR,DR,UR,MR,precision,recall,fscore,maskJaccard,maskDice\n")
 
 ## *** FETCH INPUT IMAGES *** ##
 infiles = []
@@ -314,6 +333,9 @@ globalMR = []
 globalPrecision = []
 globalRecall = []
 globalFscore = []
+
+globalMaskJaccard = []
+globalMaskDice = []
 
 ## *** OTHER STARTUP INITIALIZATIONS *** #
 
@@ -403,7 +425,7 @@ with detection_graph.as_default():
             time2 = time.clock() - start_time
             print("--- DEEP LEARNING RESULTS ACHIEVED: %s seconds ---" % time2)
             #print(np.squeeze(boxes), np.squeeze(classes).astype(np.int32), np.squeeze(scores))
-            boxesDL = get_boxes_from_DL(np.squeeze(boxes), np.squeeze(classes).astype(np.int32), np.squeeze(scores), category_index, min_score_thresh=BBOX_CONFIDENCE)
+            boxesDL = get_boxes_from_TF(np.squeeze(boxes), np.squeeze(classes).astype(np.int32), np.squeeze(scores), category_index, min_score_thresh=BBOX_CONFIDENCE)
             unpolar_boxes(boxesDL, image_np)
             
             ## *** DRAWING AND MIN AREA CHECKS *** ##
@@ -471,7 +493,7 @@ with detection_graph.as_default():
                     # Draw!
                     xmin, ymin, xmax, ymax = decodeBoxFromDict(gtbox)
                     cv2.rectangle(image_np, (xmin, ymin), (xmax, ymax), (255, 105, 180), 2)
-
+            
             ## *** FINAL CALCULATIONS AND THE BIG REVEAL *** ##
             
                 ### STATS DEPENDENT ON GROUND-TRUTH ###
@@ -543,7 +565,17 @@ with detection_graph.as_default():
                     globalFscore.append(0)
                 else:
                     globalFscore.append(fscore)
-
+                
+                ### COMPARE MASKS ###
+                pred_mask = gen_mask(groundTruths, width, height)
+                true_mask = gen_mask(boxesDL, width, height)
+                
+                maskJaccard = compute_mask_jaccard(pred_mask, true_mask)
+                maskDice    = compute_mask_dice(pred_mask, true_mask)
+                
+                print('Mask Jaccard: %f' % maskJaccard)
+                print('Mask Dice: %f' % maskDice)
+                
                 # Add to globals
                 if not np.isnan(averageGTRec):
                     globalIOUsRecognized.extend(iousRecognized)
@@ -553,7 +585,9 @@ with detection_graph.as_default():
                 globalDR.append(DR)
                 if not np.isinf(MR):
                     globalMR.append(MR)
-
+                globalMaskJaccard.append(maskJaccard)
+                globalMaskDice.append(maskDice)
+                
             ### STATS UNRELATED TO GROUND-TRUTH ###
             
             # Timing results for the first always involve "loading"
@@ -566,7 +600,7 @@ with detection_graph.as_default():
                 
             hasProcessedFirst = True # At this point the first is processed
 
-            ## *** SHOW ME THE BERRY *** ##
+            ## *** SHOW ME THE BOXES *** ##
             if not args.quiet:
                 cv2.imshow('object detection', image_np)
                 keyPressed = cv2.waitKey(0)
@@ -605,10 +639,12 @@ with detection_graph.as_default():
                             outputstatsf.write('{}\n'.format(iousTotal))
                             outputstatsf.write('Average IoU (Recognized @ >= {}): {}\n'.format(IOU_THRESH_MIN, averageGTRec))
                             outputstatsf.write('{}\n'.format(iousTotal))
-                            outputstatsf.write('Recognition Rate: %d\n' % RR)
-                            outputstatsf.write('Duplication Rate: %d\n' % DR)
-                            outputstatsf.write('Undetected Rate: %d\n' % UR)
-                            outputstatsf.write('Misidentification Rate: %d\n' % MR)
+                            outputstatsf.write('Recognition Rate: %f\n' % RR)
+                            outputstatsf.write('Duplication Rate: %f\n' % DR)
+                            outputstatsf.write('Undetected Rate: %f\n' % UR)
+                            outputstatsf.write('Misidentification Rate: %f\n' % MR)
+                            outputstatsf.write('Mask Jaccard: %f\n' % maskJaccard)
+                            outputstatsf.write('Mask Dice: %f\n' % maskDice)
                             outputstatsf.write("Time taken (post image import and applicable scaling) per bounding box recognized: {} seconds\n".format(timeNoImportOrResizingNormPerRec))
                             outputstatsf.write("Time taken per bounding box recognized: {} seconds\n".format(timeNormPerRec))
                         outputstatsf.write("Time taken (post image import and applicable scaling): %s seconds\n" % timeNoImportOrResizing)
@@ -624,9 +660,9 @@ with detection_graph.as_default():
                 if args.save_aggregate_statistics:
                     with open(os.path.join(outfolder, globalStatsCSVFilename), 'a') as f:
                         if groundTruths:
-                            f.write("{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(filename,time0,time1,time2,time3,lenBoxesDL,lenGTs,averageGT,averageGTRec,RR,DR,UR,MR,precision,recall,fscore))
+                            f.write("{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(filename,time0,time1,time2,time3,lenBoxesDL,lenGTs,averageGT,averageGTRec,RR,DR,UR,MR,precision,recall,fscore,maskJaccard,maskDice))
                         else:
-                            f.write("{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(filename,time0,time1,time2,time3,lenBoxesDL,None,None,None,None,None,None,None,None,None,None))
+                            f.write("{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(filename,time0,time1,time2,time3,lenBoxesDL,None,None,None,None,None,None,None,None,None,None,None,None))
 
 ### PRINT AND SAVE GLOBAL AGGREGATE STATS ###
 print("***** AGGREGATE STATISTICS FOR {} *****".format(infolder))
@@ -719,6 +755,22 @@ if globalFscore:
     if args.save_aggregate_statistics_readout:
         runningString += "F1-Score (DSC) Global Mean: {}\n".format(np.mean(fs))
         runningString += "F1-Score (DSC) Global Std. Dev: {}\n".format(np.std(fs))
+
+if globalMaskJaccard:
+    mj = np.array(globalMaskJaccard)
+    print("Mask Jaccard Global Mean:", np.mean(mj))
+    print("Mask Jaccard Global Std. Dev:", np.std(mj))
+    if args.save_aggregate_statistics_readout:
+        runningString += "Mask Jaccard Global Mean: {}\n".format(np.mean(mj))
+        runningString += "Mask Jaccard Global Std. Dev: {}\n".format(np.std(mj))
+
+if globalMaskDice:
+    md = np.array(globalMaskDice)
+    print("Mask Dice Global Mean:", np.mean(md))
+    print("Mask Dice Global Std. Dev:", np.std(md))
+    if args.save_aggregate_statistics_readout:
+        runningString += "Mask Dice Global Mean: {}\n".format(np.mean(md))
+        runningString += "Mask Dice Global Std. Dev: {}\n".format(np.std(md))
 
 if args.save_aggregate_statistics_readout and not args.dry_run:
     with open(os.path.join(outfolder, globalStatsTXTFilename), 'w+') as f:
