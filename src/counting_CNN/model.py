@@ -87,7 +87,8 @@ class CountingModel:
         self.checkpointer = None
 
         if use_checkpoint:
-            self.checkpointer = self._init_model_checkpointer(save_dir)
+            self._init_model_checkpointer(save_dir)
+    
 
     def _init_model_checkpointer(self, out_path):
         """
@@ -103,7 +104,7 @@ class CountingModel:
 
         self.checkpointer = ModelCheckpoint(save_name, monitor='val_mean_squared_error', mode='min', verbose=1,
                 save_best_only=True)
-
+        
         
     def compile(self):
         """
@@ -115,15 +116,9 @@ class CountingModel:
         
         input_img = Input(shape=(224, 224, 3))  # adapt this if using `channels_first` image data format
 
-        #output_vgg16 = vgg16_model(input_img)
-        #vgg16_model.summary()
-        x = Conv2D(16, (3, 3), activation='relu', padding='same')(input_img)
-        x = MaxPooling2D((2, 2), padding='same')(x)
-        x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
-        x = MaxPooling2D((2, 2), padding='same')(x)
-        x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
-        x = MaxPooling2D((2, 2), padding='same')(x)        
-        x = Flatten(name='flatten')(x)#(output_vgg16)#(x)
+        output_vgg16 = vgg16_model(input_img)
+        vgg16_model.summary()
+        x = Flatten(name='flatten')(output_vgg16)#(x)
         #x = Dense(16, kernel_initializer='normal', kernel_regularizer=regularizers.l2(0.01), bias_regularizer=regularizers.l2(0.1))(x)
         #x = Dropout(0.4)(x)
         x = Dense(8, kernel_initializer='normal', kernel_regularizer=regularizers.l2(0.01),
@@ -215,7 +210,7 @@ class CountingModel:
         
         es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=100, min_delta=0.5)
         
-        if self.checkpointer is not None: 
+        if self.checkpointer is not None:
             self.model.fit_generator(reg_train_generator, steps_per_epoch=train_generator.samples // batch_size,
             validation_data=reg_validation_generator, validation_steps = validation_generator.samples // batch_size, epochs =
             num_epochs, callbacks=[history, tensorboard, es, self.checkpointer], verbose=1)
