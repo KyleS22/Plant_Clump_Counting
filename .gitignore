@@ -110,3 +110,9 @@ venv.bak/
 # Data Directories
 IPhone_Annotations
 GrowPro_Annotations
+
+# Log files
+logs
+
+# Trained models
+trained_models
