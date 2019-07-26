@@ -48,6 +48,6 @@ for test_file in test_files:
         summary = pd.concat([summary, data], ignore_index=True, sort=False)
 
 
-sorted_summary = summary.sort_values(by=['accuracy'], ascending=True)
+sorted_summary = summary.sort_values(by=['mean_absolute_percentage_error'], ascending=True)
 
 print(sorted_summary)

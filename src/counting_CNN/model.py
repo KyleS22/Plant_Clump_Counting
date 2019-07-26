@@ -9,6 +9,7 @@ Description: A CNN model for plant clump counting
 
 """
 
+from keras.utils import Sequence
 from keras.preprocessing.image import load_img
 from keras.preprocessing.image import img_to_array
 from keras.applications.vgg16 import preprocess_input
@@ -23,6 +24,10 @@ from keras.layers import Input, Dense, Conv2D, MaxPooling2D, UpSampling2D, Dropo
 from keras.models import Model, model_from_json, load_model
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from keras import regularizers
+
+import skimage.io as io
+from skimage.transform import rescale
+from skimage.util import pad
 
 import numpy as np
 import os
@@ -49,6 +54,7 @@ class LossHistory(Callback):
         self.mean_absolute_error = []
         self.r_square = []
         self.count_acc = []
+        self.mean_absolute_percentage_error = []
 
     def on_batch_end(self, batch, logs={}):
         self.losses.append(logs.get('loss'))
@@ -56,6 +62,7 @@ class LossHistory(Callback):
         self.mean_absolute_error.append(logs.get('mean_absolute_error'))
         self.r_square.append(logs.get('r_square'))
         self.count_acc.append(logs.get('count_accuracy'))
+        self.mean_absolute_percentage_error.append(logs.get('mean_absolute_percentage_error'))
 
     def save(self, out_path):
         """
@@ -66,16 +73,18 @@ class LossHistory(Callback):
         """
 
         with open(os.path.join(out_path, 'loss_history.csv'), 'w') as csvfile:
-            fieldnames = ['loss', 'mean_squared_error', 'mean_absolute_error', 'r_square', 'count_acc']
+            fieldnames = ['loss', 'mean_squared_error', 'mean_absolute_error', 'r_square', 'count_acc',
+            'mean_absolute_percentage_error']
+
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
             writer.writeheader()
             
-            for loss, mse, mae, r_square, count_acc in zip(self.losses, self.mean_squared_error, self.mean_absolute_error,
-                self.r_square, self.count_acc):
+            for loss, mse, mae, r_square, count_acc, mape in zip(self.losses, self.mean_squared_error, self.mean_absolute_error,
+                self.r_square, self.count_acc, self.mean_absolute_percentage_error):
 
                 writer.writerow({"loss": loss, "mean_squared_error": mse, "mean_absolute_error": mae, "r_square": r_square,
-                "count_acc": count_acc})
+                "count_acc": count_acc, "mean_absolute_percentage_error": mape})
 
 
     
@@ -105,14 +114,21 @@ class CountingModel:
 
         save_name = os.path.join(out_path, self.name + ".h5")
 
-        self.checkpointer = ModelCheckpoint(save_name, monitor='val_mean_squared_error', mode='min', verbose=1,
+        self.checkpointer = ModelCheckpoint(save_name, monitor='val_mean_absolute_percentage_error', mode='min', verbose=1,
                 save_best_only=True)
+
     def compile(self):
+        """
+        Compiles the model for training with the predetrmined metrics
+        
+        :returns: None.
+        """
+        
     
-        metrics = ['mse', 'mae', self._get_r_square_func(), self._get_count_accuracy_func()]
+        metrics = ['mse', 'mae', 'mean_absolute_percentage_error', self._get_count_accuracy_func()]
 
         
-        self.model.compile(optimizer='adam', loss='mean_squared_error', metrics=metrics)
+        self.model.compile(optimizer='adam', loss='mean_absolute_percentage_error', metrics=metrics)
         
         self.model.summary()
 
@@ -125,24 +141,20 @@ class CountingModel:
         """
         vgg16_model = VGG16(weights='imagenet', include_top=False)
         
-        input_img = Input(shape=(224, 224, 3))  # adapt this if using `channels_first` image data format
+        input_img = Input(shape=(112, 112, 3))  # adapt this if using `channels_first` image data format
 
         #output_vgg16 = vgg16_model(input_img)
         #vgg16_model.summary()
 
-        x = Conv2D(16, (3, 3), activation='relu', padding='same')(input_img)
+        x = Conv2D(56, (3, 3), activation='relu', padding='same')(input_img)
         x = MaxPooling2D((2, 2), padding='same')(x)
-        x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+        x = Conv2D(28, (3, 3), activation='relu', padding='same')(x)
         x = MaxPooling2D((2, 2), padding='same')(x)
-        x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+        x = Conv2D(14, (3, 3), activation='relu', padding='same')(x)
         x= MaxPooling2D((2, 2), padding='same')(x)
         
         x = Flatten(name='flatten')(x)#(output_vgg16)#(x)
-        x = Dense(8, kernel_initializer='normal', kernel_regularizer=regularizers.l2(0.01),
-            bias_regularizer=regularizers.l2(0.1))(x)
-        x = Dropout(0.3)(x)
-        x = Dense(1, kernel_initializer='normal', kernel_regularizer=regularizers.l2(0.01),
-            bias_regularizer=regularizers.l2(0.1), name='Count')(x)
+        x = Dense(1, kernel_initializer='normal', kernel_regularizer=regularizers.l2(0.01), bias_regularizer=regularizers.l2(0.1), name='Count')(x)
 
 
         self.model = Model(input_img, x)
@@ -155,18 +167,41 @@ class CountingModel:
         :param file_path: The path to the file
         :returns: The loaded and processed image, ready to use in the model
         """
-        img = keras_image.load_img(file_path, target_size=(224, 224))
-        x = keras_image.img_to_array(img)
-        #x = x.reshape(1, 224, 224, 3)
-        x = np.expand_dims(x, axis=0)
+   
+        # load the image
+        img = io.imread(file_path)
+        
+        if max(img.shape) > self.target_image_size[0]:
+            # Get scaling factor 
+            scaling_factor = self.target_image_size[0] / max(img.shape)
 
-        #x = np.expand_dims(x, axis=0)
-            
-        images = np.vstack([x])
+            # Rescale by scaling factor
+            img = rescale(img, scaling_factor)
+        
+        # pad shorter dimension to be 112
+        pad_width_vertical = self.target_image_size[0] - img.shape[0]
+        pad_width_horizontal = self.target_image_size[0] - img.shape[1]
+        
+        
+        pad_top = int(np.floor(pad_width_vertical/2))
+        pad_bottom = int(np.ceil(pad_width_vertical/2))
+        pad_left =  int(np.floor(pad_width_horizontal/2))
+        pad_right = int(np.ceil(pad_width_horizontal/2))
+
+        padded = pad(img, ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), 'constant')
+        
+    
+        images = np.vstack([padded])
         
         return images
 
     def _save_model_json(self):
+        """
+        Save the model architecture to JSON
+        
+        :returns: None
+        """
+        
 
         self._make_model_out_dir()
 
@@ -204,12 +239,9 @@ class CountingModel:
         json_file.close()
         
         model = model_from_json(loaded_model_json)
-       # model.load_weights(model_weights_path)
-        #model = load_model(model_dir, custom_objects={"r_square": self._get_r_square_func(), "count_accuracy":
-        #    self._get_count_accuracy_func()})
     
         self.model = model
-        #self.compile()
+        
         model.load_weights(model_weights_path)
                
     def train(self, training_data_dir, batch_size, num_epochs, validation_data_dir=None):
@@ -229,35 +261,30 @@ class CountingModel:
 
         else:
             train_generator = self._create_generator(training_data_dir, batch_size)
-            validation_generator = self._create_generator(validation_data_dir, batch_size)
+            validation_generator = self._create_generator(validation_data_dir, 8)
 
-        label_map = train_generator.class_indices.keys()
-       
-        list_of_values = [int(x) for x in label_map]
-        
-        reg_train_generator = self._regression_flow_from_directory(train_generator, list_of_values)
-        reg_validation_generator = self._regression_flow_from_directory(validation_generator, list_of_values)
        
         history = LossHistory()
 
         tensorboard = TensorBoard(log_dir="logs/{}".format(time()))
         
-        es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=100, min_delta=0.5)
+        es = EarlyStopping(monitor='val_mean_absolute_percentage_error', mode='min', verbose=1, patience=100,
+        min_delta=2)
         
             
         if self.checkpointer is not None:
-            self.model.fit_generator(reg_train_generator, steps_per_epoch=train_generator.samples // batch_size,
-            validation_data=reg_validation_generator, validation_steps = validation_generator.samples // batch_size, epochs =
+            
+            self.model.fit_generator(train_generator, steps_per_epoch=train_generator.samples // batch_size,
+            validation_data=validation_generator, validation_steps = validation_generator.samples // 8, epochs =
             num_epochs, callbacks=[history, tensorboard, es, self.checkpointer], verbose=1)
             
-            validation_generator = self._create_generator(validation_data_dir, batch_size)
-            reg_validation_generator = self._regression_flow_from_directory(validation_generator, list_of_values)
 
         else:
-            self.model.fit_generator(reg_train_generator, steps_per_epoch=train_generator.samples // batch_size,
-            validation_data=reg_validation_generator, validation_steps = validation_generator.samples // batch_size, epochs =
+            self.model.fit_generator(train_generator, steps_per_epoch=train_generator.samples // batch_size,
+            validation_data=validation_generator, validation_steps = validation_generator.samples // 8, epochs =
             num_epochs, callbacks=[history, tensorboard, es], verbose=1)
             self._save_model()
+             
                       
         self._save_model_json()  
         return history
@@ -284,13 +311,8 @@ class CountingModel:
 
         val_gen = self._create_test_generator(data_dir)
         
-        label_map = val_gen.class_indices.keys()
-       
-        list_of_values = [int(x) for x in label_map]
-    
-        regression_gen = self._regression_flow_from_directory(val_gen, list_of_values)
         
-        return self.model.predict_generator(regression_gen, steps=num_samples/8)
+        return self.model.predict_generator(val_gen, steps=num_samples/8)
 
 
     def evaluate(self, test_data_dir):
@@ -307,9 +329,8 @@ class CountingModel:
         
          
         test_generator = self._create_test_generator(test_data_dir)
-        reg_test_generator = self._regression_flow_from_directory(test_generator, test_labels)
         
-        results = self.model.evaluate_generator(reg_test_generator, steps=test_generator.samples // test_generator.batch_size)
+        results = self.model.evaluate_generator(test_generator, steps=test_generator.samples // test_generator.batch_size)
         
         test_scores = {}
 
@@ -323,7 +344,7 @@ class CountingModel:
 
         return test_scores
   
-    def _create_train_and_validation_generators(self, training_data_dir, batch_size, target_size=(224,224)):
+    def _create_train_and_validation_generators(self, training_data_dir, batch_size, target_size=(112,112)):
         """
         Create an image generator for training and validation sets
         
@@ -333,18 +354,12 @@ class CountingModel:
         :returns: A tuple (train_generator, valid_generator)
         """
         
-        # Create generators for the data
-        train_datagen = ImageDataGenerator(rescale=1./255, data_format='channels_last', zoom_range=0.2, horizontal_flip=True, validation_split=0.2)
 
-        train_generator = train_datagen.flow_from_directory(training_data_dir, target_size=target_size,
-            batch_size=batch_size, subset="training", class_mode='sparse')
-        
-        validation_generator = train_datagen.flow_from_directory(training_data_dir, target_size=target_size,
-        batch_size=batch_size, subset="validation", class_mode='sparse')
-        
-        return train_generator, validation_generator
+        raise NotImplementedException("Need to implement train/validation split and create two generators.")
 
-    def _create_generator(self, data_dir, batch_size, target_size=(224, 224)):
+        #return train_generator, validation_generator
+
+    def _create_generator(self, data_dir, batch_size, target_size=(112, 112)):
         """
         Creates a data generator for the images
         
@@ -354,15 +369,13 @@ class CountingModel:
         :returns: An image generator for the data
         """
         
-        datagen = ImageDataGenerator(rescale=1./255, data_format='channels_last', zoom_range=0.2, horizontal_flip=True)
 
-        data_generator = datagen.flow_from_directory(data_dir, target_size=target_size, batch_size=batch_size,
-                class_mode='sparse')
+        data_generator = ClumpImageGenerator(data_dir, batch_size=batch_size, target_image_size=target_size)
 
         return data_generator
         
 
-    def _create_test_generator(self, test_data_dir, batch_size=8, target_size=(224, 224)):
+    def _create_test_generator(self, test_data_dir, batch_size=8, target_size=(112, 112)):
         """
         Create an image generator for the testing set
         
@@ -371,29 +384,12 @@ class CountingModel:
         :param target_size: The target image size for the generator.  Default is (224, 224)
         :returns: A testing image generator
         """
-
-        test_datagen = ImageDataGenerator(rescale=1./255, data_format='channels_last')
-
-        test_generator = test_datagen.flow_from_directory(test_data_dir, shuffle=False, target_size=target_size, batch_size=batch_size, class_mode='sparse')
+        
+        test_generator = ClumpImageGenerator(test_data_dir, batch_size, target_image_size=target_size)
 
         return test_generator
      
     
-    def _regression_flow_from_directory(self, flow_from_directory_gen, list_of_values):
-        """
-        A function that allows using generators for regression values
-        
-        :param flow_from_directory_gen: An image generator
-        :param list_of_values: The list of possible values for the true labels
-        :returns: A generator that represents the images and true labels for each
-        """
-            
-        for x, y in flow_from_directory_gen:
-            values = [list_of_values[int(y[i])] for i in range(len(y))]
-            yield x, values
-
-    
-
     def _get_r_square_func(self):
         """
         Return the r_square function for the model
@@ -458,6 +454,74 @@ class CountingModel:
 
 
 
+class ClumpImageGenerator(Sequence):
+    """
+    A Generator to load images into the counting model from a directory
+    """
+    
+    def __init__(self, image_directory, batch_size, target_image_size=(112,112)):
+        self.batch_size = batch_size
+        self.target_image_size = target_image_size
+        self.image_filenames = []
+        self.labels = []
 
+        self._get_files_from_dir(image_directory)
 
+    def _get_files_from_dir(self, directory):
         
+        labels = os.listdir(directory)
+
+    
+        for label in labels:
+
+            label_dir = os.path.join(directory, label)
+
+            images = os.listdir(label_dir)
+
+            for image in images:
+                image_path = os.path.join(label_dir, image)
+                self.image_filenames.append(image_path)
+                self.labels.append(label)
+
+        self.samples = len(self.image_filenames)
+        print("FOUND: {} images belonging to {} classes.".format(self.samples, len(labels)))
+
+    def __len__(self):
+        return (np.ceil(len(self.image_filenames) / float(self.batch_size))).astype(np.int)
+
+    def __getitem__(self, idx):
+
+        batch_x = self.image_filenames[idx * self.batch_size : (idx+1) * self.batch_size]
+        batch_y = self.labels[idx * self.batch_size : (idx+1) * self.batch_size]
+    
+        return np.array([self._read_and_process_image(file_name) for file_name in batch_x]), np.array(batch_y)
+   
+    def _read_and_process_image(self, file_name):
+        
+        # load the image
+        img = io.imread(file_name)
+        
+       
+        if max(img.shape) > self.target_image_size[0]:
+            # Get scaling factor 
+            scaling_factor = self.target_image_size[0] / max(img.shape)
+
+            # Rescale by scaling factor
+            img = rescale(img, scaling_factor)
+        
+        # pad shorter dimension to be 112
+        pad_width_vertical = self.target_image_size[0] - img.shape[0]
+        pad_width_horizontal = self.target_image_size[0] - img.shape[1]
+        
+        
+        pad_top = int(np.floor(pad_width_vertical/2))
+        pad_bottom = int(np.ceil(pad_width_vertical/2))
+        pad_left =  int(np.floor(pad_width_horizontal/2))
+        pad_right = int(np.ceil(pad_width_horizontal/2))
+
+        padded = pad(img, ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), 'constant')
+        
+         
+        # return the image
+        return padded
+    

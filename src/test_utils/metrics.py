@@ -13,7 +13,6 @@ from sklearn.metrics import r2_score
 from sklearn.metrics import mean_squared_error as mse
 from sklearn.metrics import mean_absolute_error as mae
 
-
 def accuracy(y_true, y_pred):
     """
     Returns the accuracy of the model
@@ -29,6 +28,12 @@ def accuracy(y_true, y_pred):
     correct = (predicted_vals == y_true)
 
     return correct.sum() / correct.size
+
+def mean_absolute_percentage_error(y_true, y_pred):
+
+    y_true, y_pred = np.array(y_true), np.array(y_pred)
+    return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
+
 
 def mean_squared_error(y_true, y_pred):
     """
