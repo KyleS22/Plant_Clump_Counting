@@ -75,8 +75,49 @@ The program can then be used as follows to create a set of cropped images in the
 python create_cropped_image_dataset.py -i data_dir/first_images -i data_dir/second_images output_dir
 ```
 
+## Data Management Tools
 
+Next up are a set of tools for dealing with the images, so that we can get them into an organized and uniform structure.  These can be found in `src/data_management`.
 
+### Creating a Training and Testing Dataset
+
+Because our images are organized in a specific way, and this is a collaborative project, it is useful for us to be able to generate a training and testing dataset from our images before we start training our models.  Thats where the `create_train_and_test_dataset.py` script is handy.
+
+The script takes in an input directory of images, and the paths to the training and testing directories.  There is also a `--overwrite` option, which allows you to generate the training and testing sets into an existing directory.  **BE WARNED, IT WILL DELETE EXISTING DATA!**
+
+The images must be in the following structure:
+```
+input_dir/
+  1/
+   IMG###.png
+   ...
+  2/
+   IMG###.png
+  3/
+  ...
+```
+
+Where the numbered folders represent the class that the images within belong to.  So all the images with 2 plants are in `input_dir/2/`.
+
+Here's an example of creating a train and test set from the images in `input_dir`:
+```
+python create_train_and_test_dataset.py input_dir output_training_dir output_testing_dir
+```
+
+Cool!
+
+### Downgrade iPhone Images
+
+Our dataset had two different types of images: low resolution zoomed out images from a GoPro camera, and high resolution zoomed in images from an iPhone.  These two image types are drastically different, and so we need to normalize them somehow.  It would be really cool if we could bring the GoPro images up to the quality of the iPhone images, but unfortunately we need to downsample the iPhone images to the resolution of the GoPro images.  This is done with the `downsgrade_iphone_images.py` script.
+
+This script takes in a source directory containing iPhone images in the structure stated in the above section.  It also takes in a target directory that that contains the low resolution images we want the iPhone images to look like, and finally an output directory. 
+
+Here's an example to convert the images in `source_dir` so that they match the images in `target_dir`.  The downsampled images will be stored in `out_dir`:
+```
+python downgrade_iphone_images.py source_dir target_dir out_dir
+```
+
+Boom! Now your shiny iPhone images look really bad!  Trust me this is a good thing.
 
 # Contribution Guide
 
