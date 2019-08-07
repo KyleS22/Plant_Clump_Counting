@@ -200,11 +200,14 @@ python validation_runner.py model_save_path/my_model.json validation_images resu
 
 The ``--system_test`` option is used to run a test on the whole counting system, but that does not work at the time of writing this.
 
+## Shell Script for Easy Testing
+Finally, there is a script called ``train_and_validate_model.sh``.  This is a convenience script that calls all of the other scripts required to train and validate a model.  
+
 ## Test Utils
 There is a modlule called ``test_utils``.  This contains scripts that simply provide functionality for testing various modules.  It is designed to take any model as input, and should be flexible enough to use to compare many different types of models.
 
 
- 
+
 
 
 # Contribution Guide
