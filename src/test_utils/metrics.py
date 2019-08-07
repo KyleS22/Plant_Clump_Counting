@@ -12,6 +12,7 @@ import numpy as np
 from sklearn.metrics import r2_score
 from sklearn.metrics import mean_squared_error as mse
 from sklearn.metrics import mean_absolute_error as mae
+from sklearn.metrics import confusion_matrix
 
 def accuracy(y_true, y_pred):
     """
@@ -68,3 +69,14 @@ def r_square(y_true, y_pred):
     """
     return r2_score(y_true, y_pred)
  
+def conf_matrix(y_true, y_pred):
+    """
+    Returns a confusion matrix for the model
+    
+    :param y_true: The true counts
+    :param y_pred: The predicted counts
+    :returns: An array representing a confusion matrix
+    """
+    
+
+    return confusion_matrix(y_true, np.rint(y_pred))

@@ -14,7 +14,7 @@ from keras.preprocessing.image import load_img
 from keras.preprocessing.image import img_to_array
 from keras.applications.vgg16 import preprocess_input
 from keras.applications.vgg16 import VGG16
-from keras.layers import Flatten, Dense
+from keras.layers import Flatten, Dense, BatchNormalization
 from keras.preprocessing import image as keras_image
 
 from keras.preprocessing.image import ImageDataGenerator
@@ -88,19 +88,21 @@ class LossHistory(Callback):
 
 
     
-class CountingModel: 
+class EncoderCountingModel: 
 
     def __init__(self, save_dir="./TEMP_MODEL_OUT", use_checkpoint=True, name="model"):
         self.model = None
         self.name = name
         self.save_dir = save_dir
         self.checkpointer = None
-        
-        self._set_up_architecture()
+        self.encoder_checkpointer = None
+        self.encoder = None
+
+        self._encoder_architecture()
 
         if use_checkpoint:
             self._init_model_checkpointer(save_dir)
-    
+            self._init_encoder_checkpointer(save_dir)
 
     def _init_model_checkpointer(self, out_path):
         """
@@ -117,7 +119,28 @@ class CountingModel:
         self.checkpointer = ModelCheckpoint(save_name, monitor='val_mean_absolute_percentage_error', mode='min', verbose=1,
                 save_best_only=True)
 
+    def _init_encoder_checkpointer(self, out_path):
+
+        self._make_model_out_dir()
+
+        save_name = os.path.join(out_path, self.name + "_encoder.h5")
+
+        self.encoder_checkpointer = ModelCheckpoint(save_name, monitor='val_mean_squared_error', mode='min', verbose=1,
+        save_best_only=True)
+
     def compile(self):
+        """
+        Compiles the model for training with the predetrmined metrics
+        
+        :returns: None.
+        """
+        
+        
+        self.model.compile(optimizer='adam', loss='mse', metrics=['mse'])
+        
+        self.model.summary()
+
+    def _compile_model(self):
         """
         Compiles the model for training with the predetrmined metrics
         
@@ -132,56 +155,97 @@ class CountingModel:
         
         self.model.summary()
 
+    
+    def _get_encoder(self, input_img):
         
+        x = Conv2D(112, (3,3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.1), bias_regularizer=regularizers.l2(0.1))(input_img)
+        x = BatchNormalization()(x)
+        x = Conv2D(112, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.1), bias_regularizer=regularizers.l2(0.1))(x)
+        x = BatchNormalization()(x)
+        x = MaxPooling2D((2,2), padding='same')(x)
+       
+        x = Conv2D(56, (3,3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.1), bias_regularizer=regularizers.l2(0.1))(x)
+        x = BatchNormalization()(x)
+        x = Conv2D(56, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.1), bias_regularizer=regularizers.l2(0.1))(x)
+        x = BatchNormalization()(x)
+        x = MaxPooling2D((2,2), padding='same')(x)
+       
+        x = Conv2D(28, (3,3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.1), bias_regularizer=regularizers.l2(0.1))(x)
+        x = BatchNormalization()(x)
+        x = Conv2D(28, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.1), bias_regularizer=regularizers.l2(0.1))(x)
+        x = BatchNormalization()(x)
+        x = MaxPooling2D((2,2), padding='same')(x)
+       
+        x = Conv2D(14, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.1), bias_regularizer=regularizers.l2(0.1))(x)
+        encoder = MaxPooling2D((2, 2), padding='same')(x)
+        
+        return encoder
+
+    def _get_decoder(self, encoder):
+    
+        x = Conv2D(14, (3,3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.1), bias_regularizer=regularizers.l2(0.1))(encoder)
+        x = BatchNormalization()(x)
+        x = Conv2D(14, (3,3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.1), bias_regularizer=regularizers.l2(0.1))(x)
+        x = BatchNormalization()(x)
+        x = UpSampling2D((2,2))(x)
+       
+        x = Conv2D(28, (3,3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.1), bias_regularizer=regularizers.l2(0.1))(x)
+        x = BatchNormalization()(x)
+        x = Conv2D(28, (3,3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.1), bias_regularizer=regularizers.l2(0.1))(x)
+        x = BatchNormalization()(x)
+        x = UpSampling2D((2,2))(x)
+       
+        x = Conv2D(56, (3,3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.1), bias_regularizer=regularizers.l2(0.1))(x)
+        x = BatchNormalization()(x)
+        x = Conv2D(56, (3,3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.1), bias_regularizer=regularizers.l2(0.1))(x)
+        x = BatchNormalization()(x)
+        x = UpSampling2D((2,2))(x)
+       
+        x = Conv2D(112, (3,3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.1), bias_regularizer=regularizers.l2(0.1))(x)
+        x = BatchNormalization()(x)
+        x = Conv2D(112, (3,3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.1), bias_regularizer=regularizers.l2(0.1))(x)
+        x = BatchNormalization()(x)
+        x = UpSampling2D((2,2))(x)
+       
+        decoder = Conv2D(3, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.01), bias_regularizer=regularizers.l2(0.01))(x)
+
+        return decoder
+
+
+    def _encoder_architecture(self):
+
+        input_img = Input(shape=(112, 112, 3))
+        
+        encoder = self._get_encoder(input_img)
+        decoder = self._get_decoder(encoder)
+
+
+        self.model = Model(input_img, decoder)
+
+ 
     def _set_up_architecture(self):
         """
         Compile the model architecture
         
         :returns: None.  The model will be compiled into this object
         """
-        vgg16_model = VGG16(weights='imagenet', include_top=False)
         
-        input_img = Input(shape=(112, 112, 3))  # adapt this if using `channels_first` image data format
+        autoencoder = self.model
 
-        #output_vgg16 = vgg16_model(input_img)
-        #vgg16_model.summary()
+        input_img = Input(shape=(112, 112, 3))
 
-        x = Conv2D(112, (3,3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.01), bias_regularizer=regularizers.l2(0.01))(input_img)
-        x = Conv2D(112, (3,3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.01), bias_regularizer=regularizers.l2(0.01))(x)
-        x = Conv2D(112, (3,3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.01), bias_regularizer=regularizers.l2(0.01))(x)
-
-        x = MaxPooling2D((2,2), padding='same')(x)
-       
-        x = Conv2D(56, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.01), bias_regularizer=regularizers.l2(0.01))(x)
-        x = Conv2D(56, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.01), bias_regularizer=regularizers.l2(0.01))(x)
-        x = Conv2D(56, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.01), bias_regularizer=regularizers.l2(0.01))(x)
-
-
-        x = MaxPooling2D((2, 2), padding='same')(x)
-       
-        x = Conv2D(28, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.01), bias_regularizer=regularizers.l2(0.01))(x)
-        x = Conv2D(28, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.01), bias_regularizer=regularizers.l2(0.01))(x)
-        x = Conv2D(28, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.01), bias_regularizer=regularizers.l2(0.01))(x)
-       
-
-        x = MaxPooling2D((2, 2), padding='same')(x)
-       
-        x = Conv2D(14, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.01), bias_regularizer=regularizers.l2(0.01))(x)
-        x = Conv2D(14, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.01), bias_regularizer=regularizers.l2(0.01))(x)
-        x = Conv2D(14, (3, 3), activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.01), bias_regularizer=regularizers.l2(0.01))(x)
-
-
-        x = Flatten(name='flatten')(x)#(output_vgg16)#(x)
-        x = Dense(49, kernel_initializer='normal', kernel_regularizer=regularizers.l2(0.01), bias_regularizer=regularizers.l2(0.01), name='NotCount')(x)
-        x = Dropout(0.4)(x)
-        x = Dense(24, kernel_initializer='normal', kernel_regularizer=regularizers.l2(0.01), bias_regularizer=regularizers.l2(0.01), name='NotCount2')(x)
-        x = Dropout(0.2)(x)
+        x = Flatten(name='flatten')(self._get_encoder(input_img))
         x = Dense(1, kernel_initializer='normal', kernel_regularizer=regularizers.l2(0.01), bias_regularizer=regularizers.l2(0.01), name='Count')(x)
 
-
         self.model = Model(input_img, x)
+        
+        for l1, l2 in zip(self.model.layers[:8], autoencoder.layers[:8]):
+            l1.set_weights(l2.get_weights())
 
-            
+        #for layer in self.model.layers[:8]:
+        #    layer.trainable = False
+           
+                  
     def prepare_input_from_file(self, file_path):
         """
         Loads and processes the given file for input to the model
@@ -266,6 +330,41 @@ class CountingModel:
         
         model.load_weights(model_weights_path)
                
+
+    def _train_encoder(self, training_data_dir, batch_size, num_epochs, validation_data_dir=None):
+        
+
+        train_generator = self._create_encoder_generator(training_data_dir, batch_size)
+        validation_generator = self._create_encoder_generator(validation_data_dir, 8)
+
+       
+        history = LossHistory()
+
+        tensorboard = TensorBoard(log_dir="logs/{}".format(time()))
+        
+        es = EarlyStopping(monitor='val_mean_squared_error', mode='min', verbose=1, patience=50,
+        min_delta=5)
+        
+            
+        if self.checkpointer is not None:
+            
+            self.model.fit_generator(train_generator, steps_per_epoch=train_generator.samples // batch_size,
+            validation_data=validation_generator, validation_steps = validation_generator.samples // 8, epochs =
+            num_epochs, callbacks=[history, tensorboard, es, self.encoder_checkpointer], verbose=1)
+            
+
+        else:
+            self.model.fit_generator(train_generator, steps_per_epoch=train_generator.samples // batch_size,
+            validation_data=validation_generator, validation_steps = validation_generator.samples // 8, epochs =
+            num_epochs, callbacks=[history, tensorboard, es], verbose=1)
+            self._save_model()
+             
+                      
+        self._save_model_json()  
+        return history
+
+
+
     def train(self, training_data_dir, batch_size, num_epochs, validation_data_dir=None):
         """
         Train the given model.
@@ -277,6 +376,10 @@ class CountingModel:
                                     training data will be split into a training and validation set.
         :returns: The training history
         """
+
+        self._train_encoder(training_data_dir, batch_size, num_epochs, validation_data_dir=validation_data_dir)
+        self._set_up_architecture()
+        self._compile_model()
 
         if validation_data_dir is None:
             train_generator, validation_generator = self._create_train_and_validation_generators(training_data_dir, batch_size)
@@ -290,7 +393,7 @@ class CountingModel:
 
         tensorboard = TensorBoard(log_dir="logs/{}".format(time()))
         
-        es = EarlyStopping(monitor='val_mean_absolute_percentage_error', mode='min', verbose=1, patience=20,
+        es = EarlyStopping(monitor='val_mean_absolute_percentage_error', mode='min', verbose=1, patience=50,
         min_delta=0.5)
         
             
@@ -412,6 +515,12 @@ class CountingModel:
         return test_generator
      
     
+    def _create_encoder_generator(self, data_dir, batch_size, target_size=(112, 112)):
+        
+        data_generator = EncoderImageGenerator(data_dir, batch_size, target_image_size=target_size)
+
+        return data_generator
+
     def _get_r_square_func(self):
         """
         Return the r_square function for the model
@@ -517,6 +626,81 @@ class ClumpImageGenerator(Sequence):
         batch_y = self.labels[idx * self.batch_size : (idx+1) * self.batch_size]
     
         return np.array([self._read_and_process_image(file_name) for file_name in batch_x]), np.array(batch_y)
+   
+    def _read_and_process_image(self, file_name):
+        
+        # load the image
+        img = io.imread(file_name)
+        
+        
+        if img.shape[2] > 3:
+            img = img[:, :, :3]
+         
+        if max(img.shape) > self.target_image_size[0]:
+            # Get scaling factor 
+            scaling_factor = self.target_image_size[0] / max(img.shape)
+
+            # Rescale by scaling factor
+            img = rescale(img, scaling_factor)
+        
+        # pad shorter dimension to be 112
+        pad_width_vertical = self.target_image_size[0] - img.shape[0]
+        pad_width_horizontal = self.target_image_size[0] - img.shape[1]
+        
+        
+        pad_top = int(np.floor(pad_width_vertical/2))
+        pad_bottom = int(np.ceil(pad_width_vertical/2))
+        pad_left =  int(np.floor(pad_width_horizontal/2))
+        pad_right = int(np.ceil(pad_width_horizontal/2))
+
+        padded = pad(img, ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), 'constant')
+        
+        # return the image
+        return padded
+
+
+class EncoderImageGenerator(Sequence):
+    """
+    A Generator to load images into the counting model from a directory
+    """
+    
+    def __init__(self, image_directory, batch_size, target_image_size=(112,112)):
+        self.batch_size = batch_size
+        self.target_image_size = target_image_size
+        self.image_filenames = []
+        self.labels = []
+
+        self._get_files_from_dir(image_directory)
+
+    def _get_files_from_dir(self, directory):
+        
+        labels = os.listdir(directory)
+
+    
+        for label in labels:
+
+            label_dir = os.path.join(directory, label)
+
+            images = os.listdir(label_dir)
+
+            for image in images:
+                image_path = os.path.join(label_dir, image)
+                self.image_filenames.append(image_path)
+                self.labels.append(label)
+
+        self.samples = len(self.image_filenames)
+        print("FOUND: {} images belonging to {} classes.".format(self.samples, len(labels)))
+
+    def __len__(self):
+        return (np.ceil(len(self.image_filenames) / float(self.batch_size))).astype(np.int)
+
+    def __getitem__(self, idx):
+
+        batch_x = self.image_filenames[idx * self.batch_size : (idx+1) * self.batch_size]
+        
+        images = np.array([self._read_and_process_image(file_name) for file_name in batch_x])
+    
+        return images, images
    
     def _read_and_process_image(self, file_name):
         

@@ -13,6 +13,7 @@ import os
 import csv
 
 from counting_CNN.model import CountingModel as CCNN
+from encoder.model import EncoderCountingModel as ECNN
 from test_utils import metrics
 
 def load_model(path_to_model, model_type, path_to_weights=None):
@@ -29,6 +30,10 @@ def load_model(path_to_model, model_type, path_to_weights=None):
         model = CCNN()
         model.load_model_file(path_to_model, path_to_weights)
     
+    elif model_type.upper() == "ENCODER":
+        model = ECNN()
+        model.load_model_file(path_to_model, path_to_weights)
+            
     #TODO: Add else branch to load different types of models
        
     else:
