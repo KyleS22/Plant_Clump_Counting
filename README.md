@@ -121,7 +121,7 @@ Boom! Now your shiny iPhone images look really bad!  Trust me this is a good thi
 
 
 ### Sort Synthetic Data
-Because we have so few images (I know the dataset isn't actually on github, but trust me we don't have enough data) we decided to take a stab at synthetic images.  Those images are not sorted when they are generated, so we've got an entire script devoted to structuring synthetic images (or really any images with the naming scheme COUNTNUMBER_IMAGENAME.png) so that they work with our models. This one is pretty simple, it takes in a directory containing the images, and a directory to store the sorted images in.
+Because we have so few images (I know the dataset isn't actually on github, but trust me we don't have enough data) we decided to take a stab at synthetic images.  Those images are not sorted when they are generated, so we've got an entire script devoted to structuring synthetic images (or really any images with the naming scheme `COUNTNUMBER_IMAGENAME.png`) so that they work with our models. This one is pretty simple, it takes in a directory containing the images, and a directory to store the sorted images in.
 
 Here's an example:
 ```
@@ -141,6 +141,16 @@ python resize_images.py input_dir
 ```
 
 Very anti-climactic, I know.  But now there should be a folder named `input_dir_rescaled` that contains all of your images just like `input_dir`, except these ones are all the same size!
+
+## And Now the Feature Presentation
+Finally some machine learning! Hold on to your hats, this one is exciting.  
+
+There are a few model architectures presented here: CountingCNN, EncoderCNN,
+
+### Counting CNN
+This is a basic CNN set up to learn regression.  All of the model code is contained within `counting_CNN/`.  The classes used to represent the model is in `model.py`.  This directory also contains `train_runner.py`, which is a command line program that makes it easy to train the model.  It takes in a few parameters:
+- **--model_save_dir** - This is the directory to store any of the model related output files in, including the trained model weights
+
 
 
 # Contribution Guide
