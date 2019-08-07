@@ -119,6 +119,30 @@ python downgrade_iphone_images.py source_dir target_dir out_dir
 
 Boom! Now your shiny iPhone images look really bad!  Trust me this is a good thing.
 
+
+### Sort Synthetic Data
+Because we have so few images (I know the dataset isn't actually on github, but trust me we don't have enough data) we decided to take a stab at synthetic images.  Those images are not sorted when they are generated, so we've got an entire script devoted to structuring synthetic images (or really any images with the naming scheme COUNTNUMBER_IMAGENAME.png) so that they work with our models. This one is pretty simple, it takes in a directory containing the images, and a directory to store the sorted images in.
+
+Here's an example:
+```
+python sort_synthetic_data.py unsorted_synthetic out_dir
+```
+
+And the images are now sorted
+
+### Resize Images
+
+Our images have a wide range of sizes (from about (25, 25) to (250, 50)).  This does not play well with our models, so we have to make sure the images are all the same size when they are input to the model.  We can't just resize them willy nilly though, otherwise we would lose the aspect ratio of the images and end up losing information.  Instead we need to rescale only images that are larger than our predetermined size, and make sure to scale all dimensions proportionally.  We then zero-pad any dimensions that are smaller than our predetermined size.  The script `resize_images.py` does just that.  Note that the default image size is (112, 112)
+
+Here's an example of resizing all images in the `input_dir`:
+
+```
+python resize_images.py input_dir
+```
+
+Very anti-climactic, I know.  But now there should be a folder named `input_dir_rescaled` that contains all of your images just like `input_dir`, except these ones are all the same size!
+
+
 # Contribution Guide
 
 To add functionality to the project, please create a new branch off of development for your new feature.  Completed features can be merged into development.  To merge with master, an approved review is required.
