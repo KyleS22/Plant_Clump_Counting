@@ -149,8 +149,62 @@ There are a few model architectures presented here: CountingCNN, EncoderCNN,
 
 ### Counting CNN
 This is a basic CNN set up to learn regression.  All of the model code is contained within `counting_CNN/`.  The classes used to represent the model is in `model.py`.  This directory also contains `train_runner.py`, which is a command line program that makes it easy to train the model.  It takes in a few parameters:
-- **--model_save_dir** - This is the directory to store any of the model related output files in, including the trained model weights
+- ``--model_save_dir`` - This is the directory to store any of the model related output files in, including the trained model weights
+- ``--validation_data_dir`` - This is the directory containing the images that should be used during the validation step of training
+- ``--batch_size`` - This is the size of the batches to use during training
+- ``--num_epochs`` - This is the number of epochs to train for
+- `` --model_name`` - This is the name for this model.  It is used for naming output files so make it memorable.
+- ``training_data_dir`` This is the directory to get the images to train the model on from.
 
+All of the parameters above with ``--`` in front of them are optional.  They have default values and the program will run fine if you do not specify them, but it is a good idea to use them anyways, even just to be more explicit about how you are training your model.
+
+Here is an example of training a model called ``my_awesome_model`` using a folder  `training_images` as the training data, and a folder `validation_images` as validation data.
+
+```
+python train_runner.py ----model_save_dir ./my_awesome_model --validation_data_dir validation_images --batch_size 32 --num_epochs 500 --model_name my_awesome_model training_images
+```
+
+It is a bit of a mouthful, but it gets the job done.  Something to note is that the model uses an early stopping technique, which means that even though I specify to train for 500 epochs, it will stop training early if the model decides that there has not been enough improvement in a while.  Once this is done, the trained model will be saved in the directory you specified, and it will be all trained up and ready to go!
+
+### Encoder
+This is a model that first trains an autoencoder on the images, and then trains a regression network using the weights from the autoencoder.  To run it, follow the instructions for the Counting CNN, except run the `train_runner.py` script in the `encoder/` directory instead.
+
+# Top Level Scripts
+There are a few convenience scripts in the `src/` directory for training and evaluating the models.  The `compare_models.py` script can be used to print out a table comparing the test results of different models.  It takes in a list of paths to get results csv files from, or you can specify the ``--is_dir`` option and pass in a single directory containing many csv files with results for different models.
+
+So if I have a directory of results files:
+```
+ Results/
+   model1.csv
+   model2.csv
+   ...
+```
+I can compare them all like this:
+```
+python compare_models.py --is_dir Results
+```
+
+To actually generate the results, you need to run the `validation_runner.py` script.  This takes in a few parameters:
+- ``--real_counts_path`` - This is only used when using the ``--sys_test`` option
+- ``--path_to_weights`` - This is the path to the trained model weights to use with the model
+- ``model_path`` - This is the path to the trained model directory, where all of the trained model outputs are stores.  
+- ``valdiation_data_dir`` - This is the path to the images to use for validation
+- ``test_result_path`` - This is the place to store the test result csv file
+- ``test_name`` - The name of the test (used for naming outputs)
+- ``model_type`` - This is used to distingush the different models.  So if we are validting the CountingCNN we would use CNN here
+
+As an example, say I want to validate the Encoder model.  Here is how I would do that
+```
+python validation_runner.py model_save_path/my_model.json validation_images results_dir test_name ENCODER --path_to_weights model_save_path 
+```
+
+The ``--system_test`` option is used to run a test on the whole counting system, but that does not work at the time of writing this.
+
+## Test Utils
+There is a modlule called ``test_utils``.  This contains scripts that simply provide functionality for testing various modules.  It is designed to take any model as input, and should be flexible enough to use to compare many different types of models.
+
+
+ 
 
 
 # Contribution Guide
