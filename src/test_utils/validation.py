@@ -46,6 +46,16 @@ def run_validation(validation_data_dir, path_to_model, out_path, save_file_name=
 
     utils.save_test_results(test_scores, out_path, file_name=save_file_name)
 
+    conf_mat = metrics.conf_matrix(y_true, y_pred)
+
+    classes = sorted([int(x) for x in os.listdir(validation_data_dir)])
+
+    df = pd.DataFrame(conf_mat, index = classes, columns=classes)
+
+    print(df)
+
+    df.to_csv(os.path.join(out_path,"conf_matrix.csv"))
+
 def _validate(model, image_paths, true_labels):
     """
     Run validation on the given model with the given data

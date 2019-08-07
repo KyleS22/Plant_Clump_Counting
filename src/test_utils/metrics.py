@@ -12,7 +12,7 @@ import numpy as np
 from sklearn.metrics import r2_score
 from sklearn.metrics import mean_squared_error as mse
 from sklearn.metrics import mean_absolute_error as mae
-
+from sklearn.metrics import confusion_matrix
 
 def accuracy(y_true, y_pred):
     """
@@ -29,6 +29,19 @@ def accuracy(y_true, y_pred):
     correct = (predicted_vals == y_true)
 
     return correct.sum() / correct.size
+
+def mean_absolute_percentage_error(y_true, y_pred):
+    """
+    Returns the mean absolute percentage error between y_true and y_pred.
+    
+    :param y_true: The true counts
+    :param y_pred: The predicted counts
+    :returns: The mean absolute percentage error between the true and predicted counts
+    """
+    
+    y_true, y_pred = np.array(y_true), np.array(y_pred)
+    return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
+
 
 def mean_squared_error(y_true, y_pred):
     """
@@ -63,3 +76,14 @@ def r_square(y_true, y_pred):
     """
     return r2_score(y_true, y_pred)
  
+def conf_matrix(y_true, y_pred):
+    """
+    Returns a confusion matrix for the model
+    
+    :param y_true: The true counts
+    :param y_pred: The predicted counts
+    :returns: An array representing a confusion matrix
+    """
+    
+
+    return confusion_matrix(y_true, np.rint(y_pred))
