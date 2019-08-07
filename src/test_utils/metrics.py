@@ -31,7 +31,14 @@ def accuracy(y_true, y_pred):
     return correct.sum() / correct.size
 
 def mean_absolute_percentage_error(y_true, y_pred):
-
+    """
+    Returns the mean absolute percentage error between y_true and y_pred.
+    
+    :param y_true: The true counts
+    :param y_pred: The predicted counts
+    :returns: The mean absolute percentage error between the true and predicted counts
+    """
+    
     y_true, y_pred = np.array(y_true), np.array(y_pred)
     return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
 
