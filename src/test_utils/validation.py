@@ -31,7 +31,8 @@ def run_validation(validation_data_dir, path_to_model, out_path, save_file_name=
         os.mkdir(out_path)
 
     image_paths, y_true = _get_validation_data(validation_data_dir)
-
+    
+    print("VALIDATION LOADING MODEL")
     model = utils.load_model(path_to_model, model_type, path_to_weights)
     
     predictions = model.predict_generator(validation_data_dir, len(image_paths))

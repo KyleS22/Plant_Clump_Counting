@@ -27,7 +27,6 @@ from sklearn.model_selection import train_test_split
 from skimage.transform import resize,rotate
 import pickle
 
-
 # # LBP and GLCM Helper Functions
 
 # In[131]:
@@ -138,8 +137,10 @@ class GLCMModel:
         pickle.dump(model, open(os.path.join(self.save_path, self.model_type.upper(), "GLCM_model.sav"), 'wb'))
  
     def load_model(self, path_to_model):
+        print("LOADING_MODEL")
         self.model = pickle.load(open(path_to_model, 'rb'))
-    
+        print("MODEL LOADED")
+
     def predict(self, data_dir):
         self._load_data_from_dir(data_dir, train=False)
         return self.model.predict(self.test_GLCM)
@@ -195,8 +196,10 @@ class LBPHModel:
         pickle.dump(model, open(os.path.join(self.save_path, self.model_type.upper(), "LBPH_model.sav"), 'wb'))
  
     def load_model(self, path_to_model):
+        print("LOADING MODEL")
         self.model = pickle.load(open(path_to_model, 'rb'))
-    
+        print("MODEL LOADED")
+
     def predict(self, data_dir):
         self._load_data_from_dir(data_dir, train=False)
         return self.model.predict(self.test_LBPH)
