@@ -1,4 +1,4 @@
-MODEL_NAME=EncoderCNN_NoSynth_FulTra #SimpleCNN_3_out_3_conv
+MODEL_NAME=EncoderCNN_NoSynth #SimpleCNN_3_out_3_conv
 SAVE_DIR=~/Plant_Clump_Counting/trained_models/$MODEL_NAME
 
 MODEL_SAVE_NAME="$MODEL_NAME.h5"

@@ -12,8 +12,13 @@ Description: A module containing useful functions for evaluating models
 import os
 import csv
 
+import pickle
+
+
 from counting_CNN.model import CountingModel as CCNN
 from encoder.model import EncoderCountingModel as ECNN
+from conventional_ML.final_code_and_models.Fourier_Transform import FourierTransformModel as FTM     
+from conventional_ML.final_code_and_models.LBPH_and_GLCM import GLCMModel, LBPHModel
 from test_utils import metrics
 
 def load_model(path_to_model, model_type, path_to_weights=None):
@@ -33,9 +38,18 @@ def load_model(path_to_model, model_type, path_to_weights=None):
     elif model_type.upper() == "ENCODER":
         model = ECNN()
         model.load_model_file(path_to_model, path_to_weights)
-            
-    #TODO: Add else branch to load different types of models
+           
+    elif model_type.upper() == "FFT":
+        model = FTM()
+        model.load_model(path_to_model)
        
+    elif model_type.upper() == "GLCM":
+        model = GLCMModel()
+        model.load_model(path_to_model)
+   
+    elif model_type.upper() == "LBPH":
+        model = LBPHModel()
+        model.load_model(path_to_model)
     else:
         raise Exception("The model_type you have chosen is not currently supported.")
        

@@ -27,7 +27,6 @@ def accuracy(y_true, y_pred):
     predicted_vals = np.rint(y_pred)
 
     correct = (predicted_vals == y_true)
-
     return correct.sum() / correct.size
 
 def mean_absolute_percentage_error(y_true, y_pred):
@@ -51,7 +50,6 @@ def mean_squared_error(y_true, y_pred):
     :param y_pred: The predicted counts
     :returns: The MSE of the model
     """
-
     return mse(y_true, y_pred)#(np.square(np.array(y_true) - np.array(y_pred))).mean(axis=-1)
 
 def mean_absolute_error(y_true, y_pred):

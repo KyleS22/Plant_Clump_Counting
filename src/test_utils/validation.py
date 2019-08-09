@@ -32,14 +32,17 @@ def run_validation(validation_data_dir, path_to_model, out_path, save_file_name=
 
     image_paths, y_true = _get_validation_data(validation_data_dir)
 
-
     model = utils.load_model(path_to_model, model_type, path_to_weights)
     
     predictions = model.predict_generator(validation_data_dir, len(image_paths))
-
-    y_pred = [x[0] for x in predictions]
-   
-
+    
+    try:
+        y_pred = [x[0] for x in predictions]
+    except:
+        y_pred = predictions
+    
+    y_pred = np.asarray(y_pred)
+    y_true = np.asarray(y_true)
     #y_true, y_pred = _validate(model, image_paths, true_labels)
 
     test_scores = utils.create_test_scores_dict(y_true, y_pred)
@@ -54,7 +57,8 @@ def run_validation(validation_data_dir, path_to_model, out_path, save_file_name=
 
     print(df)
 
-    df.to_csv(os.path.join(out_path,"conf_matrix.csv"))
+    df.to_csv(os.path.join(out_path, os.path.splitext(save_file_name)[0] + "_conf_matrix.csv"))
+
 
 def _validate(model, image_paths, true_labels):
     """
