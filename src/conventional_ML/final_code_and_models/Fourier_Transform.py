@@ -85,7 +85,6 @@ class FourierTransformModel:
         pickle.dump(model, open(os.path.join(self.save_path, self.model_type.upper(), "FFT_model.sav"), 'wb'))
  
     def load_model(self, path_to_model):
-        print("LOADING MODEL")
         self.model = pickle.load(open(path_to_model, 'rb'))
     
     def predict(self, data_dir):

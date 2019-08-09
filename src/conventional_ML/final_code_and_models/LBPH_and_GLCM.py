@@ -137,9 +137,7 @@ class GLCMModel:
         pickle.dump(model, open(os.path.join(self.save_path, self.model_type.upper(), "GLCM_model.sav"), 'wb'))
  
     def load_model(self, path_to_model):
-        print("LOADING_MODEL")
         self.model = pickle.load(open(path_to_model, 'rb'))
-        print("MODEL LOADED")
 
     def predict(self, data_dir):
         self._load_data_from_dir(data_dir, train=False)
@@ -196,9 +194,7 @@ class LBPHModel:
         pickle.dump(model, open(os.path.join(self.save_path, self.model_type.upper(), "LBPH_model.sav"), 'wb'))
  
     def load_model(self, path_to_model):
-        print("LOADING MODEL")
         self.model = pickle.load(open(path_to_model, 'rb'))
-        print("MODEL LOADED")
 
     def predict(self, data_dir):
         self._load_data_from_dir(data_dir, train=False)

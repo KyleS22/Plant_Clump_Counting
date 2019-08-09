@@ -40,21 +40,15 @@ def load_model(path_to_model, model_type, path_to_weights=None):
         model.load_model_file(path_to_model, path_to_weights)
            
     elif model_type.upper() == "FFT":
-        print("LOADING FFT MODEL")
         model = FTM()
-        print("CALLING")
         model.load_model(path_to_model)
        
     elif model_type.upper() == "GLCM":
-        print("LOADING GLCM MODEL")
         model = GLCMModel()
-        print("CALLING")
         model.load_model(path_to_model)
    
     elif model_type.upper() == "LBPH":
-        print("LOADING LBPH MODEL")
         model = LBPHModel()
-        print("CALLING")
         model.load_model(path_to_model)
     else:
         raise Exception("The model_type you have chosen is not currently supported.")

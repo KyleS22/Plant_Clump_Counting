@@ -32,7 +32,6 @@ def run_validation(validation_data_dir, path_to_model, out_path, save_file_name=
 
     image_paths, y_true = _get_validation_data(validation_data_dir)
     
-    print("VALIDATION LOADING MODEL")
     model = utils.load_model(path_to_model, model_type, path_to_weights)
     
     predictions = model.predict_generator(validation_data_dir, len(image_paths))
@@ -51,8 +50,8 @@ def run_validation(validation_data_dir, path_to_model, out_path, save_file_name=
     utils.save_test_results(test_scores, out_path, file_name=save_file_name)
 
     conf_mat = metrics.conf_matrix(y_true, y_pred)
-
-    classes = sorted([int(x) for x in os.listdir(validation_data_dir)])
+    classes = np.sort(np.unique(np.concatenate((np.rint(y_pred), np.rint(y_true)), 0))).astype(int)#sorted([int(x) for x in os.listdir(validation_data_dir)])
+    
 
     df = pd.DataFrame(conf_mat, index = classes, columns=classes)
 
