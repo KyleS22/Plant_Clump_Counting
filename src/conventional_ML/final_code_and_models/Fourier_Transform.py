@@ -17,7 +17,10 @@ from sklearn import svm
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import GaussianNB
 import pickle
+from skimage.transform import rescale
+from skimage.util import pad
 
+import warnings 
 
 # # Loading Images for FFT
 
@@ -87,12 +90,55 @@ class FourierTransformModel:
     def load_model(self, path_to_model):
         self.model = pickle.load(open(path_to_model, 'rb'))
     
-    def predict(self, data_dir):
-        self._load_data_from_dir(data_dir, train=False)
-        return self.model.predict(self.test_region)
+    def predict(self, image):
+        
+        return self.model.predict(image)
 
     def predict_generator(self, data_dir, num=0):
-        return self.predict(data_dir)
+        self._load_data_from_dir(data_dir, train=False)
+
+        return self.predict(self.test_region)
+    
+    def prepare_input_from_file(self, file_path, target_image_size=(112, 112)):
+        """
+        Loads and processes the given file for input to the model
+        
+        :param file_path: The path to the file
+        :returns: The loaded and processed image, ready to use in the model
+        """
+   
+        # load the image
+        img = io.imread(file_path)
+        
+        if max(img.shape) > target_image_size[0]:
+            # Get scaling factor 
+            scaling_factor = target_image_size[0] / max(img.shape)
+
+            # Rescale by scaling factor
+            img = rescale(img, scaling_factor, multichannel=True)
+        
+        # pad shorter dimension to be 112
+        pad_width_vertical = target_image_size[0] - img.shape[0]
+        pad_width_horizontal = target_image_size[0] - img.shape[1]
+        
+        
+        pad_top = int(np.floor(pad_width_vertical/2))
+        pad_bottom = int(np.ceil(pad_width_vertical/2))
+        pad_left =  int(np.floor(pad_width_horizontal/2))
+        pad_right = int(np.ceil(pad_width_horizontal/2))
+
+        padded = pad(img, ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), 'constant')
+        
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            fourier = fft(padded).flatten()
+            fourier = np.true_divide(fourier, np.count_nonzero(fourier))
+    
+            hist,bins = np.histogram(fourier,bins=5)    
+
+ 
+        return [hist]
+
 
 #for root, dirs, files in os.walk('Data/combined_val_resized'):
 #    for filename in files:

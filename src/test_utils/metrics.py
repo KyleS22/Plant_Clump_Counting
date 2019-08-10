@@ -25,7 +25,7 @@ def accuracy(y_true, y_pred):
     
 
     predicted_vals = np.rint(y_pred)
-
+    print(type(predicted_vals), type(y_true))
     correct = (predicted_vals == y_true)
     return correct.sum() / correct.size
 

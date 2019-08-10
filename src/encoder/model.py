@@ -97,6 +97,8 @@ class EncoderCountingModel:
         self.checkpointer = None
         self.encoder_checkpointer = None
         self.encoder = None
+        
+        self.target_image_size = (112, 112)
 
         self._encoder_architecture()
 
@@ -262,7 +264,7 @@ class EncoderCountingModel:
             scaling_factor = self.target_image_size[0] / max(img.shape)
 
             # Rescale by scaling factor
-            img = rescale(img, scaling_factor)
+            img = rescale(img, scaling_factor, multichannel=True)
         
         # pad shorter dimension to be 112
         pad_width_vertical = self.target_image_size[0] - img.shape[0]
@@ -278,8 +280,7 @@ class EncoderCountingModel:
         
     
         images = np.vstack([padded])
-        
-        return images
+        return np.expand_dims(images, axis=0)
 
     def _save_model_json(self):
         """

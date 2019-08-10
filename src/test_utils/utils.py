@@ -32,6 +32,7 @@ def load_model(path_to_model, model_type, path_to_weights=None):
     """
 
     if model_type.upper() == "CNN":
+    
         model = CCNN()
         model.load_model_file(path_to_model, path_to_weights)
     

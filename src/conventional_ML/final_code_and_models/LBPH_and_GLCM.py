@@ -26,7 +26,10 @@ import skimage.exposure as exp
 from sklearn.model_selection import train_test_split
 from skimage.transform import resize,rotate
 import pickle
+from skimage.transform import rescale
+from skimage.util import pad
 
+import warnings
 # # LBP and GLCM Helper Functions
 
 # In[131]:
@@ -34,7 +37,10 @@ import pickle
 
 def GLCM_feature(Image):
             
-    Image =sk.img_as_ubyte(cl.rgb2gray(Image))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        Image =sk.img_as_ubyte(cl.rgb2gray(Image))
+    
     glcm_feature=0
     glcms = ft.greycomatrix(Image,distances=[2,4,8,16,32,48,64,128,256,512],angles=[0.785398,1.5708,3.142],normed=True)
     #glcm_feature_1 = ft.greycoprops(glcms, prop='contrast')
@@ -52,18 +58,20 @@ def GLCM_feature(Image):
 
 def get_LBP(training_image):
     
-    training_image = cl.rgb2gray(training_image)
-    Linv_LBP_image=0
-    Var_LBP_image=0
-    Linv_iterative_histogram=[]
-    Var_iterative_histogram=[]
-    iterative_histogram=[]
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        training_image = cl.rgb2gray(training_image)
+        Linv_LBP_image=0
+        Var_LBP_image=0
+        Linv_iterative_histogram=[]
+        Var_iterative_histogram=[]
+        iterative_histogram=[]
     
-    Linv_LBP_image = ft.local_binary_pattern(training_image,P=32,R=3,method='uniform')
-    Var_LBP_image = ft.local_binary_pattern(training_image,P=32,R=3,method='var')    
-    Linv_iterative_histogram,notneeded = np.histogram(Linv_LBP_image,bins=10,range=(0,9))
-    Var_iterative_histogram,notneeded = np.histogram(Var_LBP_image,bins=16,range=(0,7000))
-    iterative_histogram = np.concatenate((Linv_iterative_histogram,Var_iterative_histogram),axis=None)
+        Linv_LBP_image = ft.local_binary_pattern(training_image,P=32,R=3,method='uniform')
+        Var_LBP_image = ft.local_binary_pattern(training_image,P=32,R=3,method='var')    
+        Linv_iterative_histogram,notneeded = np.histogram(Linv_LBP_image,bins=10,range=(0,9))
+        Var_iterative_histogram,notneeded = np.histogram(Var_LBP_image,bins=16,range=(0,7000))
+        iterative_histogram = np.concatenate((Linv_iterative_histogram,Var_iterative_histogram),axis=None)
         
     return iterative_histogram
 
@@ -139,12 +147,46 @@ class GLCMModel:
     def load_model(self, path_to_model):
         self.model = pickle.load(open(path_to_model, 'rb'))
 
-    def predict(self, data_dir):
-        self._load_data_from_dir(data_dir, train=False)
-        return self.model.predict(self.test_GLCM)
+    def predict(self, img):
+        
+        return self.model.predict([img])
+    
+    def prepare_input_from_file(self, file_path, target_image_size=(112, 112)):
+        """
+        Loads and processes the given file for input to the model
+        
+        :param file_path: The path to the file
+        :returns: The loaded and processed image, ready to use in the model
+        """
+        # load the image
+        img = io.imread(file_path)
+        
+        if max(img.shape) > target_image_size[0]:
+            # Get scaling factor 
+            scaling_factor = target_image_size[0] / max(img.shape)
+
+            # Rescale by scaling factor
+            img = rescale(img, scaling_factor, multichannel=True)
+        
+        # pad shorter dimension to be 112
+        pad_width_vertical = target_image_size[0] - img.shape[0]
+        pad_width_horizontal = target_image_size[0] - img.shape[1]
+        
+        pad_top = int(np.floor(pad_width_vertical/2))
+        pad_bottom = int(np.ceil(pad_width_vertical/2))
+        pad_left =  int(np.floor(pad_width_horizontal/2))
+        pad_right = int(np.ceil(pad_width_horizontal/2))
+
+        padded = pad(img, ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), 'constant')
+        
+         
+        return GLCM_feature(padded)
+
+
 
     def predict_generator(self, data_dir, num=0):
-        return self.predict(data_dir)
+        self._load_data_from_dir(data_dir, train=False)
+        return self.predict(self.test_GLCM)
 
 class LBPHModel:
 
@@ -196,12 +238,47 @@ class LBPHModel:
     def load_model(self, path_to_model):
         self.model = pickle.load(open(path_to_model, 'rb'))
 
-    def predict(self, data_dir):
+    def predict(self, image):
+        
+        return self.model.predict([image])
+
+    def predict_generator(self, data_dir, num=0):
         self._load_data_from_dir(data_dir, train=False)
         return self.model.predict(self.test_LBPH)
 
-    def predict_generator(self, data_dir, num=0):
-        return self.predict(data_dir)
+    def prepare_input_from_file(self, file_path, target_image_size=(112, 112)):
+        """
+        Loads and processes the given file for input to the model
+        
+        :param file_path: The path to the file
+        :returns: The loaded and processed image, ready to use in the model
+        """
+        # load the image
+        img = io.imread(file_path)
+        
+        if max(img.shape) > target_image_size[0]:
+            # Get scaling factor 
+            scaling_factor = target_image_size[0] / max(img.shape)
+
+            # Rescale by scaling factor
+            img = rescale(img, scaling_factor, multichannel=True)
+        
+
+        # pad shorter dimension to be 112
+        pad_width_vertical = target_image_size[0] - img.shape[0]
+        pad_width_horizontal = target_image_size[0] - img.shape[1]
+        
+        
+        pad_top = int(np.floor(pad_width_vertical/2))
+        pad_bottom = int(np.ceil(pad_width_vertical/2))
+        pad_left =  int(np.floor(pad_width_horizontal/2))
+        pad_right = int(np.ceil(pad_width_horizontal/2))
+
+        padded = pad(img, ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), 'constant')
+        
+    
+         
+        return get_LBP(padded)
 
 
 
