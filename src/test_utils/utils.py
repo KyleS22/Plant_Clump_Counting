@@ -93,7 +93,7 @@ def create_test_scores_dict(y_true, y_pred):
     test_scores["mean_absolute_error"] = metrics.mean_absolute_error(y_true, y_pred) 
     test_scores["r_square"] = metrics.r_square(y_true, y_pred)
     test_scores["mean_absolute_percentage_error"] = metrics.mean_absolute_percentage_error(y_true, y_pred)
-
+    test_scores["pearson_r"] = metrics.pearson_r_square(y_true, y_pred)
     return test_scores
 
  

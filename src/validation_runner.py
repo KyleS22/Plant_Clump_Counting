@@ -12,7 +12,7 @@ Description: A command line script to validate a model
 import argparse
 import sys
 
-from test_utils import validation, system_test
+from test_utils import validation, create_prediction_csv as cpc
 
 if __name__ == "__main__":
 
@@ -35,7 +35,7 @@ if __name__ == "__main__":
             print("real_counts.csv required for sytem test!")
             sys.exit(1)
 
-        system_test.run_system_test(args.real_counts_path, args.validation_data_dir, args.model_path,
+        cpc.create_prediction_csv(args.real_counts_path, args.validation_data_dir, args.model_path,
             args.test_result_path, save_file_name=args.test_name, model_type=args.model_type,
             path_to_weights=args.path_to_weights)
     else:

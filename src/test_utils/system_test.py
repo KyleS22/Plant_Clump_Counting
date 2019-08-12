@@ -205,11 +205,13 @@ def _evaluate_model(model, real_counts, sorted_images):
                 prediction = model.predict(images_to_predict) 
 
                 row_counts += prediction
-      
+            
             try:
-                true_count = int(real_counts.loc[real_counts[0] == row].values[0][1])
+                true_count = int(real_counts.loc[real_counts[0] == str(int(row))].values[0][1])
             except:
-                continue
+                print(real_counts)
+                print(row)
+                print("\n\n")
         
             true_counts.append(true_count)
             predicted_counts.append(row_counts)

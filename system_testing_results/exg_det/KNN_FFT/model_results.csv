@@ -1,0 +1,2 @@
+accuracy,mean_squared_error,mean_absolute_error,r_square,mean_absolute_percentage_error,pearson_r
+0.0,2187.9305555555557,43.24801587301587,-7.764552304528554,75.97869203116349,"(0.8093472863726934, 4.185819066285271e-118)"

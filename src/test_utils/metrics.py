@@ -13,6 +13,7 @@ from sklearn.metrics import r2_score
 from sklearn.metrics import mean_squared_error as mse
 from sklearn.metrics import mean_absolute_error as mae
 from sklearn.metrics import confusion_matrix
+from scipy.stats import pearsonr
 
 def accuracy(y_true, y_pred):
     """
@@ -28,6 +29,10 @@ def accuracy(y_true, y_pred):
     print(type(predicted_vals), type(y_true))
     correct = (predicted_vals == y_true)
     return correct.sum() / correct.size
+
+def pearson_r_square(y_true, y_pred):
+  
+    return pearsonr(y_true, y_pred)
 
 def mean_absolute_percentage_error(y_true, y_pred):
     """

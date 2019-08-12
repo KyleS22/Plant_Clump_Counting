@@ -36,6 +36,9 @@ def create_vis(df, save_path=None, silent=False):
     :returns: None
     """
     
+    if silent:
+        import matplotlib
+        matplotlib.use('AGG')
 
     plt.figure()
     sn.heatmap(df, annot=True, cmap=sn.cm.rocket_r)
@@ -45,7 +48,6 @@ def create_vis(df, save_path=None, silent=False):
     
     if save_path:
         plt.savefig(save_path)
-
     
     if not silent:
         plt.show()
