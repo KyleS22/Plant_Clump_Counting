@@ -136,8 +136,12 @@ def _evaluate_model(model, real_counts, sorted_images):
             row_counts = 0
 
             for image in images:
-                
-                images_to_predict = model.prepare_input_from_file(image)
+               
+                try:
+                    images_to_predict = model.prepare_input_from_file(image)
+                except:
+                    continue
+
                 prediction = model.predict(images_to_predict) 
 
                 row_counts += prediction

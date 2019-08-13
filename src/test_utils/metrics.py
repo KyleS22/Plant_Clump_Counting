@@ -15,6 +15,16 @@ from sklearn.metrics import mean_absolute_error as mae
 from sklearn.metrics import confusion_matrix
 from scipy.stats import pearsonr
 
+def countdiff(y_true, y_pred):
+
+    y_true, y_pred = np.array(y_true), np.array(y_pred)
+
+    return np.average((y_true - y_pred))
+
+def abscountdiff(y_true, y_pred):
+
+    return abs(countdiff(y_true, y_pred))
+
 def accuracy(y_true, y_pred):
     """
     Returns the accuracy of the model
@@ -26,9 +36,9 @@ def accuracy(y_true, y_pred):
     
 
     predicted_vals = np.rint(y_pred)
-    print(type(predicted_vals), type(y_true))
     correct = (predicted_vals == y_true)
-    return correct.sum() / correct.size
+
+    return (correct.sum() / correct.size) * 100
 
 def pearson_r_square(y_true, y_pred):
   
