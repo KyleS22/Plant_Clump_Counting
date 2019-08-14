@@ -1,0 +1,82 @@
+{
+    "model" : {
+        "net_input_height":     416,
+        "net_input_width":      416,
+        "labels":               ["plant"],
+        "mask_save_format":     ".png"
+    },
+
+    "train": {
+        "train_image_folder":   "D:\\tensorflow\\projects\\PlantClumpDetection\\git\\datasets\\annotations\\img_patches_8_png\\train\\",
+        "train_annot_folder":   "D:\\tensorflow\\projects\\PlantClumpDetection\\git\\object_detection\\annotations\\pascalvoc_labels_patched_oneclass\\train_test_validate_folders\\train\\",
+        "cache_name":           "plantDetectionUnet.pkl",
+        
+        "train_times":          10,
+        "pretrained_weights":   "",
+        "batch_size":           4,
+        "learning_rate":        1e-4,
+        "nb_epochs":            100,
+        "gpus":                 "0",
+        
+        "use_custom_mask_func": false,
+        
+        "shuffle":              true,
+        "jitter":               0.2,
+        "allow_horizontal_flip":true,
+        "allow_vertical_flip":  true,
+        "allow_90deg_rotate":   true,
+        "min_resize_scale":     0.4,
+        "max_resize_scale":     1.25,
+        "hue_adjust":           0,
+        "saturation_adjust":    1,
+        "brightness_adjust":    0,
+        "contrast_adjust":      1,
+
+        "tensorboard_dir":      "logs",
+        "saved_weights_name":   "plantDetectionUnet.h5",
+        "debug":                true
+    },
+
+    "valid": {
+        "valid_image_folder":   "D:\\tensorflow\\projects\\PlantClumpDetection\\git\\datasets\\annotations\\img_patches_8_png\\validate\\",
+        "valid_annot_folder":   "D:\\tensorflow\\projects\\PlantClumpDetection\\git\\object_detection\\annotations\\pascalvoc_labels_patched_oneclass\\train_test_validate_folders\\validate\\",
+        "valid_save_folder":    "D:\\tensorflow\\projects\\PlantClumpDetection\\annotations\\unet\\training8\\masks_valid\\",
+        "cache_name":           "plantDetectionUnetValid.pkl",
+        
+        "batch_size":           1,
+        
+        "shuffle":              true,
+        "jitter":               0.0,
+        "allow_horizontal_flip":false,
+        "allow_vertical_flip":  false,
+        "allow_90deg_rotate":   false,
+        "min_resize_scale":     1.0,
+        "max_resize_scale":     1.0,
+        "hue_adjust":           0,
+        "saturation_adjust":    1,
+        "brightness_adjust":    0,
+        "contrast_adjust":      1, 
+        
+        "valid_times":          1
+    },
+    
+    "test": {
+        "test_image_folder":   "D:\\tensorflow\\projects\\PlantClumpDetection\\git\\datasets\\annotations\\img_patches_8_png\\test\\",
+        "test_annot_folder":   "D:\\tensorflow\\projects\\PlantClumpDetection\\git\\object_detection\\annotations\\pascalvoc_labels_patched_oneclass\\train_test_validate_folders\\test\\",
+        "cache_name":           "plantDetectionUnetTest.pkl",
+        
+        "shuffle":              true,
+        "jitter":               0.0,
+        "allow_horizontal_flip":false,
+        "allow_vertical_flip":  false,
+        "allow_90deg_rotate":   false,
+        "min_resize_scale":     1.0,
+        "max_resize_scale":     1.0,
+        "hue_adjust":           0,
+        "saturation_adjust":    1,
+        "brightness_adjust":    0,
+        "contrast_adjust":      1, 
+        
+        "test_times":          1
+    }
+}
