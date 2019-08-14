@@ -244,8 +244,8 @@ class EncoderCountingModel:
         for l1, l2 in zip(self.model.layers[:8], autoencoder.layers[:8]):
             l1.set_weights(l2.get_weights())
 
-        #for layer in self.model.layers[:8]:
-        #    layer.trainable = False
+        for layer in self.model.layers[:8]:
+            layer.trainable = False
            
                   
     def prepare_input_from_file(self, file_path):

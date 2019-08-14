@@ -146,9 +146,17 @@ if __name__ == "__main__":
     parser.add_argument("train_dir", help="The directory to output the training set to")
     parser.add_argument("test_dir", help="The directory to output the testing set to")
     parser.add_argument("--overwrite", action="store_true")
+   
+    parser.add_argument("--test_size",default=None, help="Custom test_size")
     args = parser.parse_args()
     
-    print("Creating train test split...")
-    create_train_and_test_split(args.data_dir, args.train_dir, args.test_dir, overwrite_old_data=args.overwrite)
-    print("Done!\n")
+
+    if not args.test_size:
+        print("Creating train test split...")
+        create_train_and_test_split(args.data_dir, args.train_dir, args.test_dir, overwrite_old_data=args.overwrite)
+        print("Done!\n")
+    else:
+        print("Creating train test split...")
+        create_train_and_test_split(args.data_dir, args.train_dir, args.test_dir, test_size=float(args.test_size), overwrite_old_data=args.overwrite)
+        print("Done!\n")
 

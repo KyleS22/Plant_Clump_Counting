@@ -1,0 +1,4 @@
+,0,stitch_name,predicted_count,true_count,absolute_error
+1,0,419838519,74.0,84,10.0
+0,1,419838518,68.0,84,16.0
+2,0,419838520,65.0,84,19.0

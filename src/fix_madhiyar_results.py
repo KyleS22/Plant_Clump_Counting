@@ -13,8 +13,8 @@ import pandas as pd
 import numpy as np
 import os
 
-OUT_PATH = "../system_testing_results/UNet/CapsNet/per_row_results/"
-INPUTS = "~/Unet_output.csv"
+OUT_PATH = "../system_testing_results/exg_det/CapsNet/per_row_results/"
+INPUTS = "~/EXG_out.csv"
 
 
 def _load(path):
