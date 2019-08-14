@@ -1,2 +1,2 @@
-abs_count_diff,count_diff,mean_squared_error,r_square,accuracy
-21.68802334760295,-21.68802334760295,726.2427168701504,-1.4134881422024872,5.0
+abs_count_diff,count_diff,mean_squared_error,mean_absolute_error,r_square,mean_absolute_percentage_error,accuracy
+21.68802334760295,-21.68802334760295,726.2427168701504,22.041869501449106,-1.4134881422024872,34.3360459398157,5.0
