@@ -1,0 +1,26 @@
+<annotation>
+    <folder>D:\tensorflow\projects\PlantClumpDetection\git\datasets\annotations\img_patches_8_png</folder>
+    <filename>19_G0448829_1.png</filename>
+    <path>D:\tensorflow\projects\PlantClumpDetection\git\datasets\annotations\img_patches_8_png\19_G0448829_1.png</path>
+    <source>
+        <database>annotations</database>
+    </source>
+    <size>
+        <width>500</width>
+        <height>500</height>
+        <depth>3</depth>
+    </size>
+    <segmented>0</segmented>
+    <object>
+        <name>plant</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>239</xmin>
+            <ymin>220</ymin>
+            <xmax>390</xmax>
+            <ymax>282</ymax>
+        </bndbox>
+    </object>
+</annotation>
