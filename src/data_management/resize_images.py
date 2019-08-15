@@ -18,7 +18,14 @@ import argparse
 import sys
 
 
-def _read_and_process_image(file_name, target_image_size=(112, 112)):
+def read_and_process_image(file_name, target_image_size=(112, 112)):
+    """
+    Read the given image and resize it to the target size.  Uses padding to keep the aspect ratio
+    
+    :param file_name: The path to the image to resize
+    :param target_image_size: A tuple representing the size the new image should be 
+    :returns: The resized image
+    """
     
     # load the image
     img = io.imread(file_name)
@@ -50,6 +57,12 @@ def _read_and_process_image(file_name, target_image_size=(112, 112)):
 
 
 def resize_images(input_dir):
+    """
+    Resize the images in the given input directory and save them in a separate directory with the same name +"_resized"
+    
+    :param input_dir: The path to the directory of images to resize
+    :returns: None.  The resized images will be stored in a directory in the same place as the input_dir
+    """
 
     out_dir = input_dir + "_resized"
 

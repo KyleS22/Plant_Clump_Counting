@@ -26,8 +26,27 @@ import test_utils.metrics as metrics
 import test_utils.utils as utils
 from tqdm import tqdm
 
-def create_prediction_csv(real_counts_csv, path_to_clump_images, path_to_model, out_path,
-        save_file_name="system_test_results.csv", model_type="CNN", path_to_weights=None):
+def create_prediction_csv(real_counts_csv, path_to_clump_images, path_to_model, out_path, model_type="CNN", path_to_weights=None):
+    """
+    Create a csv for each row containing the results of different stitch
+    images.  They will be in the following format:
+
+    stitch_name, predicted_count, true_count
+    
+    :param real_counts_csv: The path to the csv containing row numbers and
+                            ground truth counts as its columns
+    :param path_to_clump_images: The path to the folder containing clump images
+                                 to predict
+    :param path_to_model: The path to the model save file 
+    :param out_path: The path to the directory to store the outputs in
+    :param model_type: The type of model that is being loaded.  Refer to
+                             the README for possible model types.  Default is
+                             CNN
+    :param path_to_weights: The path to the model weights, if it is a CNN
+                                 type model.  Default is None.
+    :returns: None.  The appropriate csv files will be written to the given
+                     output directory
+    """
 
     if not os.path.exists(out_path):
         os.mkdir(out_path)
@@ -166,6 +185,16 @@ def _evaluate_model(model, real_counts, sorted_images):
 
 
 def _save_per_row_results(per_row_results, out_dir):
+    """
+    Save each dataframe in the per_row results dictionary to it's own csv.  All
+    files wiil be stored in the out_dir, in a directory called
+    'per_row_results'.
+    
+    :param per_row_results: A dictionary whose keys are rows and values are the
+                            dataframes holding their predictions
+    :param out_dir: The directory to save the files in
+    :returns: None.  The appropiate files will be saved in the out_dir
+    """
     
     save_dir = os.path.join(out_dir, "per_row_results")
 
@@ -174,8 +203,9 @@ def _save_per_row_results(per_row_results, out_dir):
 
     for row in per_row_results.keys():
         stitches = per_row_results[row]
-
-        stitch_results = [['stitch_name', 'predicted_count', 'true_count']]
+        
+        header = ['stitch_name', 'predicted_count', 'true_count'] 
+        stitch_results = []
 
         for stitch in stitches.keys():
             
@@ -194,8 +224,8 @@ def _save_per_row_results(per_row_results, out_dir):
         stitch_results = np.asarray(stitch_results)
        
 
-        df = pd.DataFrame(data=stitch_results)#stitch_results[1:, 1:], index=stitch_results[1:, 0], columns=stitch_results[0, 1:])
-        
+        df = pd.DataFrame(data=stitch_results)        
+        df.columns = header 
 
-        df.to_csv(os.path.join(save_dir, row + ".csv"))
+        df.to_csv(os.path.join(save_dir, row + ".csv"), index=False)
  

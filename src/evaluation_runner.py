@@ -1,11 +1,12 @@
 """
 File Name: evaluation_runner.py
 
-Authors: {% <AUTHOR> %}
+Authors: Kyle Seidenthal
 
 Date: 12-08-2019
 
-Description: {% <DESCRIPTION> %}
+Description: A command line program to run evaluation on a model, given a
+folder of its per_row results
 
 """
 

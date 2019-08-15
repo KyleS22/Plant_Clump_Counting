@@ -1,7 +1,7 @@
 """
 File Name: metrics.py
 
-Authors: {% <AUTHOR> %}
+Authors: Kyle Seidenthal
 
 Date: 23-07-2019
 
@@ -16,14 +16,19 @@ from sklearn.metrics import confusion_matrix
 from scipy.stats import pearsonr
 
 def countdiff(y_true, y_pred):
+    """
+    Get the average differnce in the counts
+    
+    :param y_true: The true counts
+    :param y_pred: The predicted counts
+    :returns: The average difference in the predicted counts from the true
+    counts
+    """
 
     y_true, y_pred = np.array(y_true), np.array(y_pred)
 
     return np.average((y_true - y_pred))
 
-def abscountdiff(y_true, y_pred):
-
-    return abs(countdiff(y_true, y_pred))
 
 def accuracy(y_true, y_pred):
     """
@@ -41,6 +46,13 @@ def accuracy(y_true, y_pred):
     return (correct.sum() / correct.size) * 100
 
 def pearson_r_square(y_true, y_pred):
+    """
+    Get the pearson r_squared values for the model
+    
+    :param y_true: The true counts
+    :param y_pred: The predicted counts
+    :returns: The pearson r values
+    """
   
     return pearsonr(y_true, y_pred)
 

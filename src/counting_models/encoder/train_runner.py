@@ -19,6 +19,17 @@ from datetime import datetime
 from model import LossHistory, EncoderCountingModel
 
 def train_model(save_dir, model_name, training_data_dir, batch_size, num_epochs, validation_data_dir=None):
+    """
+     Train the encoder model and save it 
+    
+    :param save_dir: The directory name to save the model in
+    :param model_name: The name of the model (for file naming purposes)
+    :param training_data_dir: The directory to get training images from
+    :param batch_size: The batch size to use
+    :param num_epochs: The number of epochs to train for
+    :param validation_data_dir: The directory to get validation data from
+    :returns: None
+    """
 
     model = EncoderCountingModel(save_dir, name=model_name)
     

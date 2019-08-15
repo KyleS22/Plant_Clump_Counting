@@ -24,8 +24,20 @@ import test_utils.metrics as metrics
 import test_utils.utils as utils
 
 
-def run_validation(validation_data_dir, path_to_model, out_path, save_file_name="validataion_test.csv",
-        model_type="CNN", path_to_weights=None):
+def run_validation(validation_data_dir, path_to_model, out_path, save_file_name="validataion_test.csv", model_type="CNN", path_to_weights=None):
+    """
+    Run the validation set to get metrics on the given model
+    
+    :param validation_data_dir: The directory containing the validation images
+    :param path_to_model: The path to the model save file
+    :param out_path: The path to save the output results csv file
+    :param save_file_name: The name of the output file.
+                           Default is 'validation_test.csv'
+    :param model_type: The model type
+    :param path_to_weights: The path to the weights file for a CNN model.
+                                 Default is None
+    :returns: None
+    """
     
     if not os.path.exists(out_path):
         os.mkdir(out_path)
@@ -43,7 +55,6 @@ def run_validation(validation_data_dir, path_to_model, out_path, save_file_name=
     
     y_pred = np.asarray(y_pred)
     y_true = np.asarray(y_true)
-    #y_true, y_pred = _validate(model, image_paths, true_labels)
 
     test_scores = utils.create_test_scores_dict(y_true, y_pred)
 
@@ -54,8 +65,6 @@ def run_validation(validation_data_dir, path_to_model, out_path, save_file_name=
     
 
     df = pd.DataFrame(conf_mat, index = classes, columns=classes)
-
-    print(df)
 
     df.to_csv(os.path.join(out_path, os.path.splitext(save_file_name)[0] + "_conf_matrix.csv"))
 
@@ -86,11 +95,6 @@ def _validate(model, image_paths, true_labels):
 
         y_true.append(label)
         y_pred.append(prediction)
-
-
-    for x, y in zip(y_true, y_pred):
-        print(x, y)
-    
 
 
     return y_true, y_pred

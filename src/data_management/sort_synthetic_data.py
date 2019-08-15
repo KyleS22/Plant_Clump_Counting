@@ -35,7 +35,7 @@ def sort(data_path, out_path):
     for image in images:
         parts = image.split('_')
         
-
+        # filenames are label_imgnum.png
         label = str(int(parts[0]))
         
         if 'bin.png' in parts:

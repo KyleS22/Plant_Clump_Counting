@@ -64,7 +64,7 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description="Visualize a confusion matrix from a csv") 
 
-    parser.add_argument('file_path', default=None, help="The path to the saved model file")
+    parser.add_argument('file_path', default=None, help="The path to the saved confusion matrix csv.")
     
     parser.add_argument('--save', default=None, help="The path to the place to save the figure")
     parser.add_argument('--silent', action='store_true', help='Do not display the plot when generated')

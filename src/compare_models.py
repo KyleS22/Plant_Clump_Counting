@@ -17,6 +17,8 @@ import argparse
 parser = argparse.ArgumentParser(description="Compare a set of models") 
 
 parser.add_argument('result_paths', nargs='+', help="The path to the saved results file.  Can be listed by using multiple times.")
+parser.add_argument('out_path', help="The path to store the comparison csv file
+        to.")
 parser.add_argument('--is_dir', action="store_true", help="If the given path is a directory, get all files in the directory and compare.")
 
 args = parser.parse_args()
@@ -50,4 +52,4 @@ for test_file in test_files:
 
 sorted_summary = summary.sort_values(by=['accuracy'], ascending=False)
 
-print(sorted_summary)
+sorted_summary.to_csv(args.out_path)
