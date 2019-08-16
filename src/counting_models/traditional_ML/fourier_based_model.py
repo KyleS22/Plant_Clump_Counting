@@ -1,9 +1,3 @@
-
-# coding: utf-8
-
-# In[12]:
-
-
 from scipy.fftpack import fft
 import skimage.io as io
 import os as os 
@@ -22,13 +16,23 @@ from skimage.util import pad
 
 import warnings 
 
-# # Loading Images for FFT
-
-# In[6]:
 
 class FourierTransformModel:
+    """
+    A model that uses features extracted from the Fourier spectrum of the image
+    """
 
     def __init__(self, model_type=None, save_path=None):
+        """
+        Initialize the model
+        
+        :param model_type:      The type of model to use.  Could be one of the
+                                following strings: 'KNN', 'SVC', 'GNB'
+        :param save_path=None:  The path to the directory to save the model in
+                                after training.
+        :returns: None.         The model will be initialized with the correct
+                                parameters
+        """
         
         self.region_features=[]
         self.classes=[]
@@ -57,6 +61,15 @@ class FourierTransformModel:
 
 
     def _load_data_from_dir(self, path_to_data, train=True):
+        """
+        Load the images from the 'path_to_data' directory.
+        
+        :param path_to_data:    The path to the directory containing the images
+        :param train:           Whether to load the data for training or for validation
+                                purposes.  Default is True
+        :returns:               None.  The images will be loaded and processed
+                                for training.
+        """
         
         for root, dirs, files in os.walk(path_to_data):
            
@@ -83,22 +96,61 @@ class FourierTransformModel:
                     self.test_classes_region.append(int(image_class))
 
     def fit(self, train_data_dir):
+        """
+        Fit the model to the data in the given directory.
+        
+        :param train_data_dir:  The directory containing the images to train on
+        :returns:               None.  The trained model will be saved to the
+                                `save_path` that was initialized.
+        """
         self._load_data_from_dir(train_data_dir, train=True)
         self.model.fit(self.train_region, self.train_classes_region)
         pickle.dump(model, open(os.path.join(self.save_path, self.model_type.upper(), "FFT_model.sav"), 'wb'))
  
     def load_model(self, path_to_model):
+        """
+        Load the model from a save file at the given path
+        
+        :param path_to_model: The path to the model save file
+        :returns: The model will be initialized to be used for testing
+        """
         self.model = pickle.load(open(path_to_model, 'rb'))
     
     def predict(self, image):
+        """
+        Predict the number of plants in the given image
+        
+        :param image:   The image to predict from.  Note that the image must be
+                        loaded correctly using the 'prepare_input_from_file()' function.
+        :returns: The predicted number of plants in the image
+        """
         
         return self.model.predict(image)
 
     def predict_generator(self, data_dir, num=0):
+        """
+        Get predictions from the model on all images in the given directory.
+        
+        :param data_dir:    The directory to get the images from
+        :returns:           The predicted number of plants in all of the images in the
+                            given directory.
+        """
         self._load_data_from_dir(data_dir, train=False)
 
         return self.predict(self.test_region)
-    
+
+    def validate(self, data_dir):
+        """
+        Get the predictions and true classes for the given folder of images
+        
+        :param data_dir: The directory to get the images from
+        :returns: A tuple containing (y_true, y_pred)
+        """
+
+        self._load_data_from_dir(data_dir, train=False)
+        
+        return (self.predict(self.test_region), self.test_classes_region)
+
     def prepare_input_from_file(self, file_path, target_image_size=(112, 112)):
         """
         Loads and processes the given file for input to the model
@@ -138,57 +190,4 @@ class FourierTransformModel:
 
  
         return [hist]
-
-
-#for root, dirs, files in os.walk('Data/combined_val_resized'):
-#    for filename in files:
-#        cropped_image =  io.imread(root+'/'+filename)
-#        cropped_image = filt.unsharp_mask(cropped_image, radius=1, amount=4)
-#        image_class = root.replace("\\","/").split('/')[2]
-#        for angle in rotation_angles:
-#            print("Testing Image: "+str(filename)+" Class: "+str(image_class)+" Angle: "+str(angle))
-#            fourier = fft(cropped_image).flatten()
-#            fourier = np.true_divide(fourier, np.count_nonzero(fourier))
-#            hist,bins = np.histogram(fourier,bins=5)
-#            test_region.append(hist)
-#            test_classes_region.append(int(image_class))
-#
-#
-# # Classification
-
-# In[16]:
-
-
-#model = KNeighborsClassifier(n_neighbors=5)
-#model.fit(train_region,train_classes_region)
-#pickle.dump(model, open('models/KNN_FFT_model.sav', 'wb'))
-#loaded_model = pickle.load(open('models/KNN_FFT_model.sav', 'rb'))
-#predicted_classes = loaded_model.predict(test_region)
-#print("\nKNN Confusion Matrix")
-#print(confusion_matrix(test_classes_region, predicted_classes))
-#print("KNN Accuracy Score")
-#print(accuracy_score(test_classes_region,predicted_classes))
-
-
-#svm_rbf = svm.SVC(kernel='rbf', C=50)
-#svm_rbf.fit(train_region,train_classes_region)
-#pickle.dump(svm_rbf, open('models/SVM_FFT_model.sav', 'wb'))
-#loaded_model = pickle.load(open('models/SVM_FFT_model.sav', 'rb'))
-#rbf_predicted_classes = loaded_model.predict(test_region)
-#print("\nSVM Confusion Matrix")
-#print(confusion_matrix(test_classes_region, rbf_predicted_classes))
-#print("SVM Accuracy Score")
-#print(accuracy_score(test_classes_region,rbf_predicted_classes))
-
-
-
-#gnb = GaussianNB()
-#gnb.fit(train_region,train_classes_region)
-#pickle.dump(gnb, open('models/GNB_FFT_model.sav', 'wb'))
-#loaded_model = pickle.load(open('models/GNB_FFT_model.sav', 'rb'))
-#gnb_predicted_classes = loaded_model.predict(test_region)
-#print("\n\nGNB Confusion Matrix")
-#print(confusion_matrix(test_classes_region, gnb_predicted_classes))
-#print("GNB Accuracy Score")
-#print(accuracy_score(test_classes_region,gnb_predicted_classes))
 
