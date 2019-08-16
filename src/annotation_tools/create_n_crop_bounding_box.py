@@ -6,11 +6,15 @@ import os as os
 import sys
 from math import ceil
 
-def show_bounding_boxes(dir_name="Umair"):
+def show_bounding_boxes(dir_name):
+    """
+    Show the bounding boxes on all the images in the given directory
     
-    #Parameter:dir_name assumes that both image and annotation directories are in your pwd
-    #The function takes the direcotry name and creates bounding boxes around the annoted 
-    #clumped plants.
+    :param dir_name: The name of the directory to get the images and
+    annotations from
+    :returns: None.  Displays a plot with a bounding box
+    """
+    
     
     
     images_path = os.path.join('.', dir_name)
@@ -35,11 +39,12 @@ def show_bounding_boxes(dir_name="Umair"):
             plt.imshow(image)
 
 def cropped_bounding_boxes(dir_name='Umair',filename='IMG_4426.JPG'):
+    """
+    Create a cropped imag
     
-    #Parameter:dir_name is the name of the directory
-    #Parameter:filename is the name of the image file
-    #returns: cropped images array and the class_label array
-    #The class_label_array will represent the TRUE class of same image on corresponding cropped_image array
+    :param dir_name='Umair',filename='IMG_4426.JPG': {% A parameter %}
+    :returns: {% A thing %}
+    """
     
     try:
         image = io.imread(dir_name+'/'+filename, plugin='matplotlib')
@@ -77,9 +82,4 @@ def cropped_bounding_boxes(dir_name='Umair',filename='IMG_4426.JPG'):
     return cropped_images,image_labels, filename
 
 
-# Function Call Test
-#cropped_images,image_labels = cropped_bounding_boxes('Data/Training','IMG_4456.JPG')
-#for i in range(0,len(cropped_images)):
-#    fig = plt.figure()
-#    plt.title("Clump Image: "+str(i+1)+" with: "+str(image_labels[i])+" Plants")
-#    plt.imshow(cropped_images[i])
+
