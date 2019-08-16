@@ -17,8 +17,9 @@ import pickle
 
 from counting_CNN.model import CountingModel as CCNN
 from encoder.model import EncoderCountingModel as ECNN
-from conventional_ML.final_code_and_models.Fourier_Transform import FourierTransformModel as FTM     
-from conventional_ML.final_code_and_models.LBPH_and_GLCM import GLCMModel, LBPHModel
+from traditional_ML.fourier_based_model import FourierTransformModel as FTM     
+from traditional_ML.lbph_based_model import LBPHModel
+from traditional_ML.glcm_based_model import GLCMModel
 from test_utils import metrics
 
 def load_model(path_to_model, model_type, path_to_weights=None):

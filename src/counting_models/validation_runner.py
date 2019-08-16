@@ -10,7 +10,11 @@ Description: A command line script to validate a model
 """
 
 import argparse
-import sys
+
+import os,sys,inspect
+current_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir) 
 
 from test_utils import validation
 
@@ -29,7 +33,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
 
-    if args.model_type = "CNN" and args.path_to_weights is None:
+    if args.model_type == "CNN" and args.path_to_weights is None:
         print("Validation of a CNN model requires the use of the '--path_to_weights' parameter.")
         sys.exit(1)
 
