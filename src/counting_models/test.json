@@ -1,0 +1,14 @@
+{
+    "detection_outputs": ["~/Plant_Counting_Data/faster_det/" ],
+    "models": [     {
+        "path": "~/Plant_Emergence_Counting/Trained_Models/Counting/TradMLModels/SVM_LBPH_model.sav",
+        "weights": "None",
+        "type": "LBPH",
+        "name": "SVM_LBPH_model"
+
+    }],
+    "prediction_out_path": "~/NEW_RESULTS",
+    "real_counts_path": "~/Plant_Counting_Data/real_counts.csv",
+    "total_results_out_path": "~/NEW_RESULTS/TOTAL_RESULTS.csv"
+
+}

@@ -1,0 +1,74 @@
+{
+    "detection_outputs": ["~/Plant_Counting_Data/exg_det/", "~/Plant_Counting_Data/faster_det/", "~/Plant_Counting_Data/SSDliteMobilenetV2/", "~/Plant_Counting_Data/SSDliteResnet/","~/Plant_Counting_Data/UNet/", "~/Plant_Counting_Data/YOLOv3/" ],
+    "models": [{
+        "path": "~/Plant_Emergence_Counting/Trained_Models/Counting/CNN/EncoderCNN_NoSynth/EncoderCNN_NoSynth.json",
+        "weights": "~/Plant_Emergence_Counting/Trained_Models/Counting/CNN/EncoderCNN_NoSynth/EncoderCNN_NoSynth.h5",
+        "type": "ENCODER",
+        "name": "EncoderCNN_NoSynth"
+    },
+    {
+        "path": "~/Plant_Emergence_Counting/Trained_Models/Counting/TradMLModels/GNB_FFT_model.sav",
+        "weights": "None",
+        "type": "FFT",
+        "name": "GNB_FFT"
+
+    },{
+        "path": "~/Plant_Emergence_Counting/Trained_Models/Counting/TradMLModels/GNB_GLCM_model.sav",
+        "weights": "None",
+        "type": "GLCM",
+        "name": "GNB_GLCM_model"
+
+    },{
+        "path": "~/Plant_Emergence_Counting/Trained_Models/Counting/TradMLModels/GNB_LBPH_model.sav",
+        "weights": "None",
+        "type": "LBPH",
+        "name": "GNB_LBPH_model "
+
+    },{
+        "path": "~/Plant_Emergence_Counting/Trained_Models/Counting/TradMLModels/KNN_FFT_model.sav",
+        "weights": "None",
+        "type": "FFT",
+        "name": "KNN_FFT_model"
+
+    }, {
+        "path": "~/Plant_Emergence_Counting/Trained_Models/Counting/TradMLModels/KNN_GLCM_model.sav",
+        "weights": "None",
+        "type": "GLCM",
+        "name": "KNN_GLCM_model"
+
+    }, {
+        "path": "~/Plant_Emergence_Counting/Trained_Models/Counting/TradMLModels/KNN_LBPH_model.sav",
+        "weights": "None",
+        "type": "LBPH",
+        "name": "KNN_LBPH_model"
+
+    }, {
+        "path": "~/Plant_Emergence_Counting/Trained_Models/Counting/TradMLModels/SVM_FFT_model.sav",
+        "weights": "None",
+        "type": "FFT",
+        "name": "SVM_FFT_model"
+
+    }, {
+        "path": "~/Plant_Emergence_Counting/Trained_Models/Counting/TradMLModels/SVM_GLCM_model.sav",
+        "weights": "None",
+        "type": "GLCM",
+        "name": "SVM_GLCM_model"
+
+    }, {
+        "path": "~/Plant_Emergence_Counting/Trained_Models/Counting/TradMLModels/SVM_LBPH_model.sav",
+        "weights": "None",
+        "type": "LBPH",
+        "name": "SVM_LBPH_model"
+
+    },{
+        "path": "~/Plant_Emergence_Counting/Trained_Models/Counting/CNN/EncoderCNN_ALLSynth/EncoderCNN_ALLSynth.json",
+        "weights": "~/Plant_Emergence_Counting/Trained_Models/Counting/CNN/EncoderCNN_ALLSynth/EncoderCNN_ALLSynth.h5",
+        "type": "ENCODER",
+        "name": "EncoderCNN_ALLSynth"
+    }
+],
+    "prediction_out_path": "~/NEW_RESULTS",
+    "real_counts_path": "~/Plant_Counting_Data/real_counts.csv",
+    "total_results_out_path": "~/NEW_RESULTS/TOTAL_RESULTS.csv"
+
+}

@@ -29,6 +29,7 @@ def evaluate_model(path_to_results_dir, out_path):
     
 
     combined = _read_and_combine_per_row_results(path_to_results_dir)
+    
 
     _compute_model_results(combined, out_path)
 
@@ -73,8 +74,12 @@ def _compute_model_results(combined_predictions, out_path):
     y_pred = combined_predictions.as_matrix(columns=['predicted_count'])
     y_true = combined_predictions.as_matrix(columns=['true_count'])
     
-    y_pred = [x[0] for x in y_pred]
-    y_true = [x[0] for x in y_true]
+    
+    try:
+        y_pred = [x[0] for x in y_pred]
+        y_true = [x[0] for x in y_true]
+    except:
+        pass
 
     test_scores = utils.create_test_scores_dict(y_true, y_pred)
 
@@ -97,8 +102,10 @@ def _read_and_combine_mean(data_dir):
     true = []
 
     for filename in files:
+       
         df = _read_results_csv(os.path.join(data_dir, filename))
         
+
         row_num = int(filename.split(".")[0])
 
         df.insert(loc=0, column='row', value=row_num)
@@ -144,7 +151,7 @@ def _read_results_csv(path_to_csv):
     :param path_to_csv: The path to the per row results file
     :returns: A dataframe containing the per row results
     """
-    return pd.read_csv(path_to_csv, header=1)
+    return pd.read_csv(path_to_csv)
 
 
 def _read_and_combine_per_row_results(data_dir):
@@ -160,8 +167,8 @@ def _read_and_combine_per_row_results(data_dir):
     data = []
 
     for filename in files:
+      
         df = _read_results_csv(os.path.join(data_dir, filename))
-        
         row_num = int(filename.split(".")[0])
 
         df.insert(loc=0, column='row', value=row_num)

@@ -162,7 +162,6 @@ def _evaluate_model(model, real_counts, sorted_images):
                     continue
 
                 prediction = model.predict(images_to_predict) 
-
                 row_counts += prediction
             
             try:
@@ -200,6 +199,7 @@ def _save_per_row_results(per_row_results, out_dir):
 
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
+    
 
     for row in per_row_results.keys():
         stitches = per_row_results[row]
@@ -218,7 +218,6 @@ def _save_per_row_results(per_row_results, out_dir):
                 pred = pred
 
             result = [stitch, pred, true]
-
             stitch_results.append(result)
         
         stitch_results = np.asarray(stitch_results)

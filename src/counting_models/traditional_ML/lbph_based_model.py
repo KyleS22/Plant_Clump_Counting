@@ -61,7 +61,7 @@ class LBPHModel:
         else:
             raise Exception("Model type not supported")
 
-    def get_LBP(training_image):
+    def get_LBP(self, training_image):
         """
         Get the LBP features of the given image
         
@@ -161,7 +161,9 @@ class LBPHModel:
         :returns: The loaded and processed image, ready to use in the model
         """
         # load the image
+        
         img = io.imread(file_path)
+        
         
         if max(img.shape) > target_image_size[0]:
             # Get scaling factor 
@@ -170,8 +172,7 @@ class LBPHModel:
             # Rescale by scaling factor
             img = rescale(img, scaling_factor, multichannel=True)
         
-
-        # pad shorter dimension to be 112
+                # pad shorter dimension to be 112
         pad_width_vertical = target_image_size[0] - img.shape[0]
         pad_width_horizontal = target_image_size[0] - img.shape[1]
         
@@ -183,7 +184,7 @@ class LBPHModel:
 
         padded = pad(img, ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), 'constant')
         
-    
+       
          
         return self.get_LBP(padded)
 
